@@ -1,0 +1,78 @@
+Build a mobile-friendly web app called "DarePool" where users compete to complete dares for a prize pool.
+
+CORE CONCEPT:
+Users can post dares, others submit video entries, and the community votes to decide a winner when the timer expires.
+
+REQUIREMENTS:
+
+AUTH:
+- Simple username-based login (no password, just enter a name for now)
+
+HOME PAGE:
+- Show all active dares in card format
+- Each card displays:
+  - Dare title
+  - Prize pool amount (just a number, no real payments yet)
+  - Countdown timer (48 hours from creation)
+  - Number of submissions
+  - Button: "View Dare"
+
+CREATE DARE:
+- Form to create a dare:
+  - Title
+  - Description
+  - Starting prize pool (number input)
+- Automatically sets a 48-hour expiration timer
+- New dares appear on homepage instantly
+
+DARE DETAIL PAGE:
+- Show:
+  - Title, description
+  - Live countdown timer
+  - Prize pool
+- Section: "Submissions"
+  - List of all entries with:
+    - Video (file upload or link)
+    - Username
+    - Vote count
+    - Vote button (only once per user)
+- Button: "Submit Entry"
+
+SUBMIT ENTRY:
+- Allow:
+  - Upload video OR paste video link
+  - Enter username (if not logged in)
+- Entry attaches to the dare
+
+VOTING SYSTEM:
+- Each user can vote only once per dare
+- Store votes locally (no backend needed for now)
+- Prevent duplicate voting per session
+
+WINNER SYSTEM:
+- When countdown hits 0:
+  - Voting locks
+  - Entry with most votes is marked "Winner"
+  - Highlight winner visually
+
+LEADERBOARD PAGE:
+- Show past dares
+- Display winners and their prize pool
+
+UI DESIGN:
+- Clean, modern, mobile-first design
+- Dark mode
+- Smooth animations (cards, buttons)
+- Make it feel like a real app, not basic HTML
+
+TECH:
+- Use simple frontend stack (HTML, CSS, JavaScript or React if preferred)
+- Use local storage or simple in-memory data
+- No real backend or payments yet
+
+EXTRA (if possible):
+- Add a "time remaining" countdown that updates live
+- Add subtle animations when voting or submitting
+
+GOAL:
+This is a functional prototype that feels real and usable on mobile, not just a mockup.

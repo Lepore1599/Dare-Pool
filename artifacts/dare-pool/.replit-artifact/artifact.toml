@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "DarePool"
+version = "1.0.0"
+id = "artifacts/dare-pool"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 24106
+
+[services.development]
+run = "pnpm --filter @workspace/dare-pool run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/dare-pool", "run", "build" ]
+publicDir = "artifacts/dare-pool/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "24106"
+BASE_PATH = "/"

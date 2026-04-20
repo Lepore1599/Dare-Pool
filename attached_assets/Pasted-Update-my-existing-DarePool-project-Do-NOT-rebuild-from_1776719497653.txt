@@ -1,0 +1,314 @@
+Update my existing DarePool project. Do NOT rebuild from scratch. Keep the current UI style, moderation system, reports system, and overall design. Improve the existing codebase by adding the following production-style features cleanly and safely.
+
+GOAL:
+Turn the current prototype into a more real app with fairness, persistence, anti-cheat basics, proper expiration logic, profiles, and an admin dashboard.
+
+IMPORTANT:
+- Reuse my existing components, pages, styling, and layout where possible
+- Do not remove current moderation/report features
+- Do not break the current design
+- Refactor only where necessary
+- Keep it mobile-first
+- Keep the app working in Replit
+
+TECH DIRECTION:
+- Use the existing stack already in the project
+- If there is no real database yet, add a simple persistent backend using a lightweight and Replit-friendly option
+- Prefer clean structure over overengineering
+- If needed, add server routes / API endpoints
+- Keep comments clear so I can edit later
+
+FEATURES TO ADD:
+
+1. REAL USER ACCOUNTS
+Replace simple temporary username logic with a more real account system.
+
+Requirements:
+- Users can sign up and log in with:
+  - username
+  - email
+  - password
+- Hash passwords securely
+- Keep auth simple but real
+- Persist users in the database
+- Add login state / sessions
+- Logged-in users stay signed in after refresh
+- Add logout button
+- Prevent duplicate usernames and duplicate emails
+
+2. FAIRNESS RULES
+Add strict fairness protections:
+
+- One submission per user per dare
+- One vote per user per dare
+- Users cannot vote on their own submission
+- Voting is disabled when a dare expires
+- Submissions are disabled when a dare expires
+- Winner is locked automatically once calculated
+- Winner cannot change after the dare is closed unless an admin overrides it
+- Randomize submission display order on the dare page so the first entry does not always get more exposure
+- Show a clear message when a user already voted or already submitted
+
+3. REAL PERSISTENT DATA
+Move away from local-only or temporary state.
+
+Create persistent data models/tables for:
+- users
+- dares
+- entries
+- votes
+- reports
+- admin actions
+
+Suggested fields:
+
+USERS:
+- id
+- username
+- email
+- passwordHash
+- createdAt
+- isAdmin
+- isBanned
+- strikeCount
+- wins
+- totalEntries
+- totalVotesCast
+
+DARES:
+- id
+- title
+- description
+- prizePool
+- createdByUserId
+- createdAt
+- expiresAt
+- status (active, expired, reported, removed)
+- winnerEntryId
+- isFeatured
+- reportCount
+
+ENTRIES:
+- id
+- dareId
+- userId
+- videoUrl
+- createdAt
+- voteCount
+- status (active, removed, flagged, winner)
+
+VOTES:
+- id
+- dareId
+- entryId
+- userId
+- createdAt
+
+REPORTS:
+- id
+- dareId
+- entryId (nullable if report is on dare only)
+- reportedByUserId
+- reason
+- details
+- createdAt
+- status (open, reviewed, dismissed, actioned)
+
+ADMIN_ACTIONS:
+- id
+- adminUserId
+- actionType
+- targetType
+- targetId
+- notes
+- createdAt
+
+4. VIDEO HANDLING
+Improve entry submissions so they work better.
+
+Requirements:
+- Support either:
+  - video upload
+  - or pasted video link
+- Validate file types
+- Add file size limit
+- Show upload progress if using file uploads
+- Show a preview/thumbnail if possible
+- Reject invalid upload types
+- Prevent blank submissions
+- Store uploaded files in a Replit-friendly way
+- Keep code structured so storage can be swapped out later for cloud storage
+
+5. EXPIRATION ENGINE
+Make dare expiration automatic and reliable.
+
+Requirements:
+- Each dare gets an expiresAt timestamp
+- Home page countdown should update live
+- When a dare expires:
+  - it moves from active to expired automatically
+  - new submissions are blocked
+  - new votes are blocked
+  - winner is auto-calculated based on highest votes
+  - winning entry is visually marked
+  - dare moves to leaderboard/history
+- If there is a tie:
+  - break ties by earliest submission timestamp
+- Make sure expiration works even after server restart or page refresh
+- Create a reusable function to evaluate and close expired dares
+
+6. USER PROFILES + TRUST SYSTEM
+Add profile pages for users.
+
+Requirements:
+- User profile page should show:
+  - username
+  - join date
+  - total wins
+  - total entries
+  - total votes cast
+  - strike count if admin is viewing
+- Show small badges such as:
+  - Winner
+  - Active Competitor
+  - New User
+- Add a simple reputation feeling without overcomplicating it
+- Link usernames to profile pages
+
+7. ADMIN DASHBOARD
+Add a protected admin-only dashboard.
+
+Requirements:
+- Only admins can access it
+- Show:
+  - reported dares
+  - reported entries
+  - flagged users
+  - removed content
+  - active dares
+  - expired dares
+- Admin actions:
+  - remove dare
+  - remove entry
+  - ban user
+  - unban user
+  - dismiss report
+  - manually override winner
+  - feature a dare
+- Log all admin actions in admin_actions table
+- Add confirmation prompts before destructive actions
+
+8. REPORT SYSTEM UPGRADE
+Keep my current report system but make it persistent and more useful.
+
+Requirements:
+- Persist reports in database
+- Allow users to report:
+  - dare
+  - entry
+- Report reasons:
+  - dangerous / self-harm
+  - illegal activity
+  - harassment / bullying
+  - hate speech / racism
+  - sexual / inappropriate
+  - offensive language
+  - spam / fake
+  - other
+- Add optional details field
+- Reported content should be visually flagged
+- Optionally hide heavily reported content from public view until review
+
+9. HOME PAGE IMPROVEMENTS
+Keep the current look, but improve functionality.
+
+Requirements:
+- Separate sections:
+  - Active Dares
+  - Ending Soon
+  - Recent Winners
+- Add filters:
+  - newest
+  - highest prize pool
+  - ending soon
+  - most submissions
+- Show small status labels on dare cards:
+  - Active
+  - Ending Soon
+  - Reported
+  - Winner Selected
+
+10. LEADERBOARD / HISTORY
+Upgrade the past winners page.
+
+Requirements:
+- Show completed dares
+- Display:
+  - dare title
+  - prize pool
+  - winner username
+  - winning entry
+  - total votes
+  - completed date
+- Make it feel like a hall of fame
+
+11. SECURITY / VALIDATION BASICS
+Add safe guardrails.
+
+Requirements:
+- Server-side validation for all important actions
+- Do not trust client-side checks alone
+- Prevent duplicate vote submissions
+- Prevent duplicate entry submissions
+- Protect admin routes
+- Sanitize user input
+- Handle invalid IDs and missing data gracefully
+- Show helpful error messages without exposing sensitive info
+
+12. UX DETAILS
+Keep the app feeling polished.
+
+Requirements:
+- Preserve dark mode styling
+- Keep animations subtle and modern
+- Add toast or inline success/error messages for:
+  - vote submitted
+  - already voted
+  - entry submitted
+  - already submitted
+  - dare expired
+  - report submitted
+- Mobile-first spacing and layout
+- Keep buttons clean and obvious
+- Do not make it ugly or generic
+
+13. SEED / DEMO DATA
+Add a small optional seed script or starter data so the app is easy to test:
+- a few users
+- a few active dares
+- a few expired dares
+- some entries
+- some votes
+- one admin account
+
+14. FINAL DELIVERABLE
+When done:
+- make sure the app runs
+- fix any broken imports or routes
+- ensure current pages still work
+- keep the code organized
+- explain what files were added or changed
+- explain how to run it in Replit
+- explain how admin login works
+- do not leave placeholder fake buttons for major features unless clearly labeled
+
+PRIORITY ORDER:
+1. accounts/auth
+2. persistent database
+3. fairness rules
+4. expiration engine
+5. admin dashboard
+6. profile pages
+7. home/leaderboard polish
+
+Do the work directly in the existing project and keep everything compatible with my current DarePool app.

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Toaster } from "@/components/ui/toaster";
+import { Toaster } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { UserProvider } from "@/context/UserContext";
 import { Navbar } from "@/components/Navbar";
@@ -10,6 +10,8 @@ import { Home } from "@/pages/Home";
 import { CreateDare } from "@/pages/CreateDare";
 import { DareDetail } from "@/pages/DareDetail";
 import { Leaderboard } from "@/pages/Leaderboard";
+import { Profile } from "@/pages/Profile";
+import { AdminDashboard } from "@/pages/AdminDashboard";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
@@ -28,6 +30,10 @@ function AppRoutes() {
           {(params) => <DareDetail id={params.id} />}
         </Route>
         <Route path="/leaderboard" component={Leaderboard} />
+        <Route path="/profile/:id">
+          {(params) => <Profile id={params.id} />}
+        </Route>
+        <Route path="/admin" component={AdminDashboard} />
         <Route component={NotFound} />
       </Switch>
     </div>
@@ -43,7 +49,7 @@ function App() {
             <AppRoutes />
           </WouterRouter>
         </UserProvider>
-        <Toaster />
+        <Toaster position="bottom-right" richColors />
       </TooltipProvider>
     </QueryClientProvider>
   );

@@ -160,6 +160,25 @@ export async function apiVote(dareId: number, entryId: number) {
   return request<{ ok: boolean; entryId: number }>("POST", `/dares/${dareId}/vote`, { entryId });
 }
 
+// ─── Comments ────────────────────────────────────────────────────────────────
+
+export interface ApiComment {
+  id: number;
+  entryId: number;
+  userId: number;
+  username: string | null;
+  content: string;
+  createdAt: string;
+}
+
+export async function apiGetComments(entryId: number) {
+  return request<{ comments: ApiComment[] }>("GET", `/entries/${entryId}/comments`);
+}
+
+export async function apiAddComment(entryId: number, content: string) {
+  return request<{ comment: ApiComment }>("POST", `/entries/${entryId}/comments`, { content });
+}
+
 // ─── Reports ─────────────────────────────────────────────────────────────────
 
 export async function apiReport(payload: {

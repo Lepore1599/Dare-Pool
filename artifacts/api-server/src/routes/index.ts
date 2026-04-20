@@ -10,6 +10,7 @@ import reportsRouter from "./reports";
 import usersRouter from "./users";
 import adminRouter from "./admin";
 import seedRouter from "./seed";
+import commentsRouter from "./comments";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -24,6 +25,7 @@ router.use("/reports", reportsRouter);
 router.use("/users", usersRouter);
 router.use("/admin", adminRouter);
 router.use("/seed", seedRouter);
+router.use("/entries/:entryId/comments", commentsRouter);
 
 // Serve uploaded files
 import express from "express";

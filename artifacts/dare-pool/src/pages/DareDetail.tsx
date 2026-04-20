@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useLocation } from "wouter";
-import { ArrowLeft, Trophy, Users, ThumbsUp, Crown, Video, Link2, Upload, Flag } from "lucide-react";
+import { ArrowLeft, Trophy, Users, Crown, Video, Play, Upload, Flag, Heart } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { apiGetDare, apiGetEntries, apiVote, type ApiDare, type ApiEntry } from "@/lib/api";
 import { useUser } from "@/context/UserContext";
@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { LoginModal } from "@/components/LoginModal";
 import { SubmitEntryModal } from "@/components/SubmitEntryModal";
 import { ReportModal } from "@/components/ReportModal";
+import { EntryFeed } from "@/components/EntryFeed";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -23,7 +24,7 @@ export function DareDetail({ id }: DareDetailProps) {
   const [showLogin, setShowLogin] = useState(false);
   const [showSubmit, setShowSubmit] = useState(false);
   const [showReport, setShowReport] = useState(false);
-  const [voteAnimation, setVoteAnimation] = useState<number | null>(null);
+  const [feedStartIndex, setFeedStartIndex] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
 
   const numId = Number(id);
@@ -46,14 +47,27 @@ export function DareDetail({ id }: DareDetailProps) {
 
   useEffect(() => { load(); }, [load]);
 
+  // Open the feed at a shared deep-link entry (#entry-123) once entries load
+  useEffect(() => {
+    if (entries.length === 0) return;
+    const hash = window.location.hash;
+    const m = /^#entry-(\d+)$/.exec(hash);
+    if (!m) return;
+    const targetId = Number(m[1]);
+    const idx = entries.findIndex((e) => e.id === targetId);
+    if (idx >= 0) setFeedStartIndex(idx);
+  }, [entries]);
+
   const handleVote = async (entryId: number) => {
     if (!user) { setShowLogin(true); return; }
     if (votedEntryId !== null || dare?.status !== "active") return;
     try {
       await apiVote(numId, entryId);
-      setVoteAnimation(entryId);
-      setTimeout(() => { setVoteAnimation(null); load(); }, 600);
+      // Optimistic update so the heart number bumps immediately in the feed
+      setVotedEntryId(entryId);
+      setEntries((prev) => prev.map((e) => e.id === entryId ? { ...e, voteCount: e.voteCount + 1 } : e));
       toast.success("Vote cast!");
+      load();
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Failed to cast vote.");
     }
@@ -78,7 +92,6 @@ export function DareDetail({ id }: DareDetailProps) {
 
   const expired = dare.status !== "active";
   const winner = entries.find((e) => e.status === "winner");
-  const maxVotes = entries.length > 0 ? Math.max(...entries.map((e) => e.voteCount)) : 0;
   const flagged = dare.status === "reported";
 
   return (
@@ -87,6 +100,19 @@ export function DareDetail({ id }: DareDetailProps) {
       <SubmitEntryModal open={showSubmit} dareId={numId} onClose={() => setShowSubmit(false)}
         onSuccess={() => { setShowSubmit(false); load(); }} />
       <ReportModal open={showReport} dareId={numId} onClose={() => { setShowReport(false); load(); }} />
+      <EntryFeed
+        open={feedStartIndex !== null}
+        entries={entries}
+        startIndex={feedStartIndex ?? 0}
+        dareTitle={dare.title}
+        votedEntryId={votedEntryId}
+        expired={expired}
+        isLoggedIn={!!user}
+        onClose={() => setFeedStartIndex(null)}
+        onVote={handleVote}
+        onRequestLogin={() => setShowLogin(true)}
+        onReportSubmitted={load}
+      />
 
       <button onClick={() => setLocation("/")}
         className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors mb-5 text-sm"
@@ -189,94 +215,69 @@ export function DareDetail({ id }: DareDetailProps) {
             {!expired && <p className="text-sm mt-1">Be the first to complete this dare!</p>}
           </div>
         ) : (
-          <div className="space-y-3">
-            {entries.map((entry, i) => (
-              <EntryCard key={entry.id} entry={entry} index={i} expired={expired}
-                hasVoted={votedEntryId !== null} votedEntryId={votedEntryId}
-                maxVotes={maxVotes} isAnimating={voteAnimation === entry.id}
-                onVote={() => handleVote(entry.id)} />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {entries.map((entry, i) => {
+                const isWinner = entry.status === "winner";
+                const myVote = votedEntryId === entry.id;
+                return (
+                  <button
+                    key={entry.id}
+                    onClick={() => setFeedStartIndex(i)}
+                    className={cn(
+                      "relative aspect-[9/14] rounded-xl overflow-hidden bg-secondary border text-left transition-all hover:scale-[1.02] hover:shadow-lg",
+                      isWinner ? "border-amber-400/50" : "border-card-border"
+                    )}
+                    data-testid={`entry-thumb-${entry.id}`}
+                  >
+                    {entry.videoType === "upload" ? (
+                      <video
+                        src={entry.videoUrl}
+                        muted
+                        playsInline
+                        preload="metadata"
+                        className="absolute inset-0 w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="absolute inset-0 bg-gradient-to-br from-primary/30 via-purple-700/20 to-black flex items-center justify-center">
+                        <Video className="w-8 h-8 text-white/70" />
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                      <div className="bg-black/50 rounded-full p-3 backdrop-blur">
+                        <Play className="w-5 h-5 text-white" fill="white" />
+                      </div>
+                    </div>
+                    {isWinner && (
+                      <div className="absolute top-2 left-2 flex items-center gap-1 text-[10px] font-bold text-amber-300 px-1.5 py-0.5 rounded-full bg-amber-400/30 backdrop-blur ring-1 ring-amber-400/50">
+                        <Crown className="w-3 h-3" />
+                      </div>
+                    )}
+                    {myVote && (
+                      <div className="absolute top-2 right-2 text-[10px] font-bold text-rose-200 px-1.5 py-0.5 rounded-full bg-rose-500/40 backdrop-blur">
+                        Voted
+                      </div>
+                    )}
+                    <div className="absolute bottom-1.5 left-2 right-2 flex items-end justify-between gap-1">
+                      <div className="min-w-0">
+                        <div className="text-white text-xs font-semibold truncate">@{entry.username}</div>
+                      </div>
+                      <div className="flex items-center gap-1 text-white text-xs font-bold">
+                        <Heart className={cn("w-3 h-3", myVote && "fill-rose-500 text-rose-500")} />
+                        {entry.voteCount}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-center text-xs text-muted-foreground mt-3">
+              Tap any entry to swipe through the feed
+            </p>
+          </>
         )}
       </div>
     </div>
-  );
-}
-
-interface EntryCardProps {
-  entry: ApiEntry; index: number; expired: boolean;
-  hasVoted: boolean; votedEntryId: number | null;
-  maxVotes: number; isAnimating: boolean; onVote: () => void;
-}
-
-function EntryCard({ entry, index, expired, hasVoted, votedEntryId, maxVotes, isAnimating, onVote }: EntryCardProps) {
-  const isWinner = entry.status === "winner";
-  const isLeader = entry.voteCount === maxVotes && maxVotes > 0 && !expired;
-  const myVote = votedEntryId === entry.id;
-
-  return (
-    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.05 }}
-      className={cn(
-        "bg-card border rounded-2xl p-4 transition-all",
-        isWinner ? "border-amber-400/50 bg-amber-400/5" :
-        isLeader ? "border-primary/40 bg-primary/5" : "border-card-border"
-      )} data-testid={`entry-card-${entry.id}`}>
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          {isWinner && (
-            <span className="flex items-center gap-1 text-xs font-bold text-amber-400 px-2 py-0.5 rounded-full bg-amber-400/20">
-              <Crown className="w-3 h-3" /> Winner
-            </span>
-          )}
-          {!isWinner && isLeader && (
-            <span className="text-xs font-bold text-primary px-2 py-0.5 rounded-full bg-primary/20">Leading</span>
-          )}
-          <span className="font-semibold text-foreground text-sm">@{entry.username}</span>
-        </div>
-        <span className="text-xs text-muted-foreground">{new Date(entry.createdAt).toLocaleDateString()}</span>
-      </div>
-
-      <div className="mb-3">
-        {entry.videoType === "link" ? (
-          <a href={entry.videoUrl} target="_blank" rel="noopener noreferrer"
-            className="flex items-center gap-2 bg-secondary hover:bg-accent rounded-xl p-3 transition-colors group">
-            <Link2 className="w-4 h-4 text-primary flex-shrink-0" />
-            <span className="text-sm text-foreground font-medium truncate">{entry.videoUrl}</span>
-          </a>
-        ) : (
-          <a href={entry.videoUrl} target="_blank" rel="noopener noreferrer"
-            className="flex items-center gap-2 bg-secondary hover:bg-accent rounded-xl p-3 transition-colors">
-            <Video className="w-4 h-4 text-primary flex-shrink-0" />
-            <span className="text-sm text-muted-foreground truncate">View uploaded video</span>
-          </a>
-        )}
-      </div>
-
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-2xl font-black text-foreground">{entry.voteCount}</span>
-          <span className="text-sm text-muted-foreground">votes</span>
-          {entry.voteCount > 0 && maxVotes > 0 && (
-            <div className="w-20 h-1.5 bg-secondary rounded-full overflow-hidden">
-              <motion.div initial={{ width: 0 }} animate={{ width: `${(entry.voteCount / maxVotes) * 100}%` }}
-                transition={{ duration: 0.5, delay: 0.2 }} className="h-full bg-primary rounded-full" />
-            </div>
-          )}
-        </div>
-        <motion.button onClick={onVote} disabled={expired || hasVoted}
-          animate={isAnimating ? { scale: [1, 1.3, 1] } : {}} transition={{ duration: 0.4 }}
-          className={cn(
-            "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-bold transition-all",
-            expired ? "bg-muted text-muted-foreground cursor-not-allowed opacity-50" :
-            myVote ? "bg-primary/20 text-primary cursor-not-allowed" :
-            hasVoted ? "bg-muted text-muted-foreground cursor-not-allowed opacity-60" :
-            "bg-primary hover:bg-primary/90 text-white glow-primary-sm cursor-pointer"
-          )} data-testid={`btn-vote-${entry.id}`}>
-          <ThumbsUp className="w-3.5 h-3.5" />
-          {myVote ? "Voted" : expired ? "Closed" : "Vote"}
-        </motion.button>
-      </div>
-    </motion.div>
   );
 }

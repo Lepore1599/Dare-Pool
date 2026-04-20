@@ -5,6 +5,7 @@ import {
 } from "@workspace/db";
 import { eq, desc, ne, and } from "drizzle-orm";
 import { requireAuth, requireAdmin } from "../middlewares/auth";
+import { adminRemoveComment, getReportedComments } from "./comments";
 
 const router = Router();
 router.use(requireAuth, requireAdmin);
@@ -107,6 +108,21 @@ router.post("/reports/:id/action", async (req, res) => {
   if (isNaN(id)) { res.status(400).json({ error: "Invalid ID." }); return; }
   await db.update(reportsTable).set({ status: "actioned" }).where(eq(reportsTable.id, id));
   await logAction(req.user!.userId, "action_report", "report", id, req.body.notes);
+  res.json({ ok: true });
+});
+
+// GET /api/admin/comments/reported
+router.get("/comments/reported", async (_req, res) => {
+  const comments = await getReportedComments();
+  res.json({ comments });
+});
+
+// POST /api/admin/comments/:id/remove
+router.post("/comments/:id/remove", async (req, res) => {
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) { res.status(400).json({ error: "Invalid ID." }); return; }
+  await adminRemoveComment(id);
+  await logAction(req.user!.userId, "remove_comment", "comment", id, req.body.notes);
   res.json({ ok: true });
 });
 

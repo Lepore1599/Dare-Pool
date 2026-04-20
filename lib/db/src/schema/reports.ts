@@ -7,6 +7,7 @@ export const reportsTable = pgTable("reports", {
   id: serial("id").primaryKey(),
   dareId: integer("dare_id").references(() => daresTable.id),
   entryId: integer("entry_id"), // nullable
+  commentId: integer("comment_id"), // nullable — for comment reports
   reportedByUserId: integer("reported_by_user_id").notNull().references(() => usersTable.id),
   reason: text("reason").notNull(),
   details: text("details"),

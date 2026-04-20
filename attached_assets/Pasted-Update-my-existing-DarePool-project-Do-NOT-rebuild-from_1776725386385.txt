@@ -1,0 +1,202 @@
+Update my existing DarePool project. Do NOT rebuild from scratch. Keep my current UI style, dark mode design, profile system, moderation system, reports system, existing comments system, and overall layout. Add the following changes cleanly into the existing codebase.
+
+GOAL:
+Allow comments directly on dares, add comment moderation that blocks bullying/hate/excessive profanity while still allowing mild profanity, and make sure dare submissions support selecting videos from the device camera roll on mobile.
+
+IMPORTANT:
+- Reuse my existing components, routes, styling, and backend structure where possible
+- Do not remove or break current comments on video submissions
+- Extend the current comments system instead of replacing it
+- Do not remove or break profiles, voting, reports, moderation, leaderboard, or submission features
+- Keep the app mobile-first and polished
+- Keep the current dark mode style
+- Do not rebuild the app from scratch
+
+FEATURES TO ADD:
+
+1. COMMENTS DIRECTLY ON DARES
+Right now comments exist only on video submissions. Extend the system so users can also comment directly on the dare itself.
+
+Requirements:
+- Add a comment section to each dare detail page
+- This dare-level comment section should appear separately from submission comments
+- Keep submission comments working exactly as they currently do
+- Dare comments should show:
+  - username
+  - avatar if available
+  - comment text
+  - timestamp
+- Logged-in users should be able to post comments directly on the dare
+- If comments already exist for submissions, do not break that system
+- Make usernames clickable to the commenter’s profile
+- Keep the design visually consistent with the rest of the app
+
+Data model support:
+- Update comments so a comment can belong to either:
+  - a dare
+  - or a submission/entry
+- Use a structure like:
+  - id
+  - userId
+  - dareId (nullable)
+  - entryId (nullable)
+  - content
+  - createdAt
+  - status
+  - reportCount
+- Enforce that a comment belongs to one target only:
+  - either dare-level
+  - or entry-level
+
+2. COMMENT MODERATION
+Add moderation specifically for comments.
+
+GOAL:
+Filter out bullying, hate, harassment, threats, slurs, and excessive profanity, while still allowing mild/common profanity in normal conversation.
+
+Requirements:
+- Moderate all new comments before saving/posting
+- Check comment content for:
+  - bullying
+  - harassment
+  - threats
+  - racism / hate speech / slurs
+  - targeted insults
+  - sexual abuse language
+  - excessive profanity
+- Do NOT block all profanity automatically
+- Mild/common profanity should be allowed when it is not abusive or excessive
+  Examples of allowed style:
+  - “this was fucking crazy”
+  - “that dare was badass as hell”
+- Profanity should be blocked or flagged when it becomes:
+  - targeted harassment
+  - repeated abusive wording
+  - aggressive bullying
+  - hate speech
+  - excessive profanity spam
+
+3. COMMENT MODERATION LOGIC
+Implement a smart but lightweight moderation approach.
+
+Requirements:
+- Normalize text before checking:
+  - lowercase
+  - strip repeated punctuation
+  - collapse spaces
+  - basic leetspeak replacement
+- Create separate moderation lists / rules for:
+  - hard blocked hate/slur terms
+  - bullying / harassment patterns
+  - excessive profanity terms/patterns
+  - soft warning phrases if needed
+- Examples of hard reject:
+  - slurs
+  - direct hateful language
+  - clear bullying/threats
+  - harassment targeting a user
+- Examples of soft flag or reject:
+  - comment is mostly profanity
+  - repeated curse words
+  - abusive phrases directed at a person
+- Mild profanity in casual reaction comments should pass
+- Do not show users the exact blocked word that triggered moderation
+
+Blocked message:
+- “This comment violates community guidelines and cannot be posted.”
+
+Optional softer message if flagged:
+- “This comment may be too aggressive or inappropriate. Please revise it.”
+
+4. COMMENT REPORTING
+Allow users to report comments.
+
+Requirements:
+- Add report button to dare comments and submission comments
+- Report reasons:
+  - harassment / bullying
+  - hate speech / racism
+  - offensive language
+  - spam
+  - sexual / inappropriate
+  - other
+- Persist reports
+- Flag reported comments for admin review
+- Optionally hide heavily reported comments until review
+- Keep report flow simple and mobile-friendly
+
+5. COMMENT UX
+Make the comment experience feel clean and social.
+
+Requirements:
+- Add comment input box on dare page
+- Add list of recent dare comments below it
+- Keep submission comment areas separate so it is clear where comments belong
+- Show total comment count for the dare
+- Add inline success/error messages for:
+  - comment posted
+  - comment blocked
+  - comment reported
+- Keep spacing, typography, and layout polished in dark mode
+- Make it easy to use on phones
+
+6. CAMERA ROLL VIDEO SUBMISSIONS ON MOBILE
+Make sure dare submissions support selecting a video from the user’s camera roll/device library.
+
+Requirements:
+- Submission flow should allow video file selection from the device on mobile
+- Use a file input configured for video uploads only
+- Keep the form mobile-friendly and easy to tap
+- Remove any dependency on pasted video links for new submissions
+- Selected videos should come from camera roll/files/device library
+- Accept common video file types only
+- Reject invalid formats
+- Enforce file size limits
+- Show selected filename and preview if possible
+- Show helpful messages for invalid files
+- Keep server-side validation for video uploads
+
+Implementation detail:
+- Use an upload input that supports mobile file selection for videos
+- Keep it camera-roll/device-library friendly, not link-based
+
+7. BACKEND / DATABASE SUPPORT
+Update existing models/routes/services as needed.
+
+Requirements:
+- Support dare-level comments and entry-level comments in the database
+- Persist moderated comments properly
+- Persist comment reports
+- Reuse current moderation/report architecture where possible
+- Keep comments tied correctly to users and targets
+- Ensure deleting a dare or entry handles related comments safely
+
+8. ADMIN SUPPORT
+Extend admin moderation to include comments.
+
+Requirements:
+- Admin dashboard should allow viewing:
+  - reported dare comments
+  - reported submission comments
+  - blocked/flagged comments if stored
+- Admin actions:
+  - remove comment
+  - dismiss report
+  - ban user if needed
+- Log admin actions if admin logging already exists
+
+9. FINAL REQUIREMENTS
+When finished:
+- make sure dare comments work
+- make sure submission comments still work
+- make sure comment moderation blocks bullying, hate, harassment, and excessive profanity
+- make sure mild profanity is still allowed in normal non-abusive comments
+- make sure users can report comments
+- make sure dare submissions allow selecting video files from the device camera roll on mobile
+- make sure the app still runs in Replit
+- explain what files were changed
+- explain how dare comments are separated from submission comments
+- explain how comment moderation works
+- explain how mobile video upload from camera roll is handled
+
+Build these changes directly into my existing DarePool project without rebuilding the app.

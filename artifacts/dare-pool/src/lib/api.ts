@@ -208,10 +208,14 @@ export async function apiVote(dareId: number, entryId: number) {
 
 export interface ApiComment {
   id: number;
-  entryId: number;
+  entryId: number | null;
+  dareId?: number | null;
   userId: number;
   username: string | null;
+  avatarUrl?: string | null;
   content: string;
+  status?: string;
+  reportCount?: number;
   createdAt: string;
 }
 
@@ -232,6 +236,36 @@ export async function apiReport(payload: {
   details?: string;
 }) {
   return request<{ report: ApiReport }>("POST", "/reports", payload);
+}
+
+// ─── Dare Comments ────────────────────────────────────────────────────────────
+
+export interface ApiDareComment {
+  id: number;
+  dareId: number | null;
+  entryId: number | null;
+  userId: number;
+  username: string | null;
+  avatarUrl: string | null;
+  content: string;
+  status: string;
+  reportCount: number;
+  createdAt: string;
+}
+
+export async function apiGetDareComments(dareId: number) {
+  return request<{ comments: ApiDareComment[] }>("GET", `/dares/${dareId}/comments`);
+}
+
+export async function apiAddDareComment(dareId: number, content: string) {
+  return request<{ comment: ApiDareComment }>("POST", `/dares/${dareId}/comments`, { content });
+}
+
+export async function apiReportComment(commentId: number, target: "dare" | "entry", targetId: number, reason: string) {
+  const path = target === "dare"
+    ? `/dares/${targetId}/comments/${commentId}/report`
+    : `/entries/${targetId}/comments/${commentId}/report`;
+  return request<{ ok: boolean }>("POST", path, { reason });
 }
 
 // ─── Users ────────────────────────────────────────────────────────────────────

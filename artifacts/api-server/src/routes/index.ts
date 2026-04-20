@@ -10,7 +10,7 @@ import reportsRouter from "./reports";
 import usersRouter from "./users";
 import adminRouter from "./admin";
 import seedRouter from "./seed";
-import commentsRouter from "./comments";
+import { entryCommentsRouter, dareCommentsRouter } from "./comments";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -21,11 +21,12 @@ router.use("/auth", authRouter);
 router.use("/dares", daresRouter);
 router.use("/dares/:dareId/entries", entriesRouter);
 router.use("/dares/:dareId/vote", votesRouter);
+router.use("/dares/:dareId/comments", dareCommentsRouter);
 router.use("/reports", reportsRouter);
 router.use("/users", usersRouter);
 router.use("/admin", adminRouter);
 router.use("/seed", seedRouter);
-router.use("/entries/:entryId/comments", commentsRouter);
+router.use("/entries/:entryId/comments", entryCommentsRouter);
 
 // Serve uploaded files
 import express from "express";

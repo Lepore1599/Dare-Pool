@@ -11,6 +11,7 @@ import { LoginModal } from "@/components/LoginModal";
 import { SubmitEntryModal } from "@/components/SubmitEntryModal";
 import { ReportModal } from "@/components/ReportModal";
 import { EntryFeed } from "@/components/EntryFeed";
+import { DareComments } from "@/components/DareComments";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -278,6 +279,9 @@ export function DareDetail({ id }: DareDetailProps) {
             </p>
           </>
         )}
+
+      <DareComments dareId={numId} onRequestLogin={() => setShowLogin(true)} />
+
       </div>
     </div>
   );

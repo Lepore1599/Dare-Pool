@@ -1,0 +1,148 @@
+Update my existing DarePool project. Do NOT rebuild from scratch. Keep my current UI style, dark mode design, comments system, moderation system, reports system, profile system, and overall layout. Add the following account and submission restrictions cleanly into the existing codebase.
+
+GOAL:
+Make profiles more personal and make submissions mobile-native by requiring uploads from the user’s device/camera roll only.
+
+IMPORTANT:
+- Reuse my existing components, routes, and styling where possible
+- Do not remove or break comments, moderation, reports, profiles, voting, or leaderboard features
+- Keep everything mobile-friendly
+- Keep the current design polished
+- Do not add link-based submissions anymore
+- Update existing submission flow instead of creating a second one
+
+FEATURES TO ADD:
+
+1. CUSTOM PROFILE PICTURE FROM CAMERA ROLL
+Users must be able to set their own custom profile picture using an image upload from their device/camera roll.
+
+Requirements:
+- Add profile picture upload to the user’s profile edit settings
+- On mobile, the image picker should allow selecting from camera roll/files
+- Accept image uploads only (jpg, jpeg, png, webp)
+- Reject non-image files
+- Add file size limit
+- Show preview before saving if possible
+- Store uploaded profile images in a persistent and Replit-friendly way
+- Update the user profile immediately after successful upload
+- If no custom image is uploaded, keep a default placeholder avatar
+- Sanitize and validate uploaded files
+- Structure code so storage can be swapped to cloud storage later if needed
+
+2. USERNAME CHANGE LIMIT: ONCE EVERY 30 DAYS
+Users should be able to edit their name, but only once every 30 days.
+
+Requirements:
+- Add editable username field in profile settings
+- Track the last time the username was changed
+- Prevent username changes if 30 days have not passed
+- Show a clear message such as:
+  “You can only change your username once every 30 days.”
+- If blocked, also show the next date they are allowed to change it
+- Continue preventing duplicate usernames
+- Keep username validation rules in place
+- Update clickable username references throughout the app after a successful rename
+- Persist this restriction in the database, not just on the client
+
+Add or update user fields as needed, for example:
+- username
+- lastUsernameChangeAt
+- avatarUrl
+
+3. REMOVE LINK-BASED SUBMISSIONS
+Submissions should NO LONGER allow pasted video links.
+
+Requirements:
+- Remove video URL / link entry option from the submission form
+- Do not show link input fields anywhere in the app for entry submissions
+- Only allow video uploads from the user’s device
+- On mobile, make the upload flow feel natural for choosing from camera roll/files
+- If possible, use an input that supports selecting video files from the device library
+- Accept video file uploads only
+- Reject unsupported file types
+- Add file size limit
+- Show selected file name and upload progress if possible
+- Prevent blank submissions
+- Keep validation on both client side and server side
+
+4. MOBILE-FIRST VIDEO SUBMISSION FLOW
+The submission system should feel built for mobile.
+
+Requirements:
+- Submission form should have:
+  - video upload field only
+  - clear submit button
+  - preview or selected file display if possible
+- Show helpful validation messages:
+  - “Please upload a video file.”
+  - “This file type is not supported.”
+  - “Video is too large.”
+- Make the upload UI easy to tap and use on phones
+- Keep dark mode styling and current design
+
+5. ENTRY DATA MODEL UPDATE
+Update the entry system to support upload-only submissions.
+
+Requirements:
+- Entries should store uploaded video path / file reference only
+- Remove dependency on external links for entries
+- Keep existing entry functionality working with uploaded videos
+- Existing old link-based entries can either:
+  - still display if already stored
+  - but no new entries should be allowed as links
+- Do not break existing leaderboard/history pages if older data exists
+
+6. PROFILE SETTINGS PAGE UPDATES
+Update the profile editing/settings experience.
+
+Requirements:
+- Allow user to:
+  - upload/change profile picture
+  - edit bio
+  - request username change
+- Show username cooldown info clearly:
+  - “Username can be changed again on [date]”
+- Show success/error messages for:
+  - avatar updated
+  - username updated
+  - username blocked by cooldown
+  - invalid image
+- Keep the page clean and mobile-friendly
+
+7. SECURITY / VALIDATION
+Add proper validation for uploads and username changes.
+
+Requirements:
+- Validate uploads on server side, not only client side
+- Validate allowed image/video mime types
+- Enforce file size limits on server side
+- Enforce username cooldown on server side
+- Enforce unique usernames on server side
+- Handle missing files and invalid input gracefully
+- Do not trust client-side checks alone
+
+8. UX / DESIGN
+Keep the design:
+- dark mode
+- polished
+- modern
+- mobile-first
+- consistent with current app styling
+
+Do not make the upload system ugly or generic.
+Use subtle inline messages or toasts for success/error states.
+
+9. FINAL REQUIREMENTS
+When finished:
+- make sure the app still runs in Replit
+- make sure current profile pages still work
+- make sure comments, voting, moderation, and reports still work
+- make sure submission flow only accepts uploaded video files going forward
+- make sure profile image uploads persist
+- make sure username changes are limited to once every 30 days
+- explain what files were changed
+- explain how file uploads work
+- explain how the username cooldown is enforced
+- explain any new database fields added
+
+Build these changes directly into my existing DarePool project without rebuilding the app.

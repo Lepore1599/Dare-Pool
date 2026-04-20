@@ -8,6 +8,7 @@ interface UserContextValue {
   login: (email: string, password: string) => Promise<void>;
   register: (username: string, email: string, password: string) => Promise<void>;
   logout: () => void;
+  refreshUser: () => Promise<void>;
 }
 
 const UserContext = createContext<UserContextValue>({
@@ -17,6 +18,7 @@ const UserContext = createContext<UserContextValue>({
   login: async () => {},
   register: async () => {},
   logout: () => {},
+  refreshUser: async () => {},
 });
 
 export function UserProvider({ children }: { children: ReactNode }) {
@@ -54,8 +56,16 @@ export function UserProvider({ children }: { children: ReactNode }) {
     setUser(null);
   };
 
+  const refreshUser = async () => {
+    if (!token) return;
+    try {
+      const { user: fresh } = await apiMe();
+      setUser(fresh);
+    } catch { /* ignore */ }
+  };
+
   return (
-    <UserContext.Provider value={{ user, token, loading, login, register, logout }}>
+    <UserContext.Provider value={{ user, token, loading, login, register, logout, refreshUser }}>
       {children}
     </UserContext.Provider>
   );

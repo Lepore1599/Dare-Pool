@@ -1,12 +1,12 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useLocation, Link } from "wouter";
 import {
   ArrowLeft, Crown, Flame, Trophy, Users, Calendar, Pencil, X, Check,
-  MessageCircle, Zap, Star, TrendingUp, Clock, ShieldAlert,
+  MessageCircle, Zap, Star, TrendingUp, Clock, ShieldAlert, Camera,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  apiGetUser, apiUpdateProfile,
+  apiGetUser, apiUpdateProfile, apiUploadAvatar,
   type ApiUser, type ApiBadge, type ApiProfileEntry, type ApiWin, type ApiProfileComment,
 } from "@/lib/api";
 import { useUser } from "@/context/UserContext";
@@ -31,14 +31,23 @@ function avatarGradient(username: string) {
   return GRADIENTS[Math.abs(hash) % GRADIENTS.length];
 }
 
-function Avatar({ user, size = "lg" }: { user: ApiUser; size?: "sm" | "md" | "lg" }) {
+function Avatar({
+  user,
+  size = "lg",
+  preview,
+}: {
+  user: ApiUser;
+  size?: "sm" | "md" | "lg";
+  preview?: string | null;
+}) {
   const sizeClass = { sm: "w-10 h-10 text-sm", md: "w-14 h-14 text-lg", lg: "w-20 h-20 text-2xl" }[size];
   const initials = user.username.slice(0, 2).toUpperCase();
+  const src = preview ?? user.avatarUrl;
 
-  if (user.avatarUrl) {
+  if (src) {
     return (
       <img
-        src={user.avatarUrl}
+        src={src}
         alt={user.username}
         className={cn(sizeClass, "rounded-2xl object-cover ring-2 ring-white/10")}
         onError={(e) => {
@@ -61,6 +70,20 @@ function Avatar({ user, size = "lg" }: { user: ApiUser; size?: "sm" | "md" | "lg
   );
 }
 
+// ─── Username cooldown helpers ────────────────────────────────────────────────
+
+function getUsernameCooldownInfo(lastUsernameChangeAt?: string | null): {
+  canChange: boolean;
+  nextAllowed: Date | null;
+  daysLeft: number;
+} {
+  if (!lastUsernameChangeAt) return { canChange: true, nextAllowed: null, daysLeft: 0 };
+  const last = new Date(lastUsernameChangeAt);
+  const nextAllowed = new Date(last.getTime() + 30 * 24 * 60 * 60 * 1000);
+  const daysLeft = Math.ceil((nextAllowed.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+  return { canChange: daysLeft <= 0, nextAllowed, daysLeft: Math.max(0, daysLeft) };
+}
+
 // ─── Profile component ────────────────────────────────────────────────────────
 
 interface ProfileProps { id: string; }
@@ -69,7 +92,7 @@ type Tab = "entries" | "wins" | "comments";
 type EntrySort = "newest" | "votes" | "winners";
 
 export function Profile({ id }: ProfileProps) {
-  const { user: me } = useUser();
+  const { user: me, refreshUser } = useUser();
   const [, setLocation] = useLocation();
   const [user, setUser] = useState<ApiUser | null>(null);
   const [entries, setEntries] = useState<ApiProfileEntry[]>([]);
@@ -79,10 +102,15 @@ export function Profile({ id }: ProfileProps) {
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<Tab>("entries");
   const [entrySort, setEntrySort] = useState<EntrySort>("newest");
+
+  // Edit state
   const [editing, setEditing] = useState(false);
   const [editBio, setEditBio] = useState("");
-  const [editAvatarUrl, setEditAvatarUrl] = useState("");
+  const [editUsername, setEditUsername] = useState("");
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   const numId = Number(id);
   const isSelf = me?.id === numId;
@@ -92,7 +120,7 @@ export function Profile({ id }: ProfileProps) {
       const { user: u, entries: e, wins: w, comments: c, badges: b } = await apiGetUser(numId);
       setUser(u); setEntries(e); setWins(w); setComments(c); setBadges(b);
       setEditBio(u.bio ?? "");
-      setEditAvatarUrl(u.avatarUrl ?? "");
+      setEditUsername(u.username);
     } catch {
       setUser(null);
     } finally {
@@ -102,19 +130,72 @@ export function Profile({ id }: ProfileProps) {
 
   useEffect(() => { load(); }, [load]);
 
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+
+    const ALLOWED = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+    if (!ALLOWED.includes(f.type)) {
+      toast.error("Only JPG, PNG, and WebP images are allowed.");
+      return;
+    }
+    if (f.size > 5 * 1024 * 1024) {
+      toast.error("Image must be under 5MB.");
+      return;
+    }
+
+    setAvatarFile(f);
+    const reader = new FileReader();
+    reader.onload = (ev) => setAvatarPreview(ev.target?.result as string);
+    reader.readAsDataURL(f);
+  };
+
   const handleSaveProfile = async () => {
     if (!user) return;
     setSaving(true);
     try {
-      await apiUpdateProfile(numId, { bio: editBio, avatarUrl: editAvatarUrl });
-      toast.success("Profile updated!");
+      let avatarUrl = user.avatarUrl;
+
+      // Upload new avatar if selected
+      if (avatarFile) {
+        const { avatarUrl: uploaded } = await apiUploadAvatar(numId, avatarFile);
+        avatarUrl = uploaded;
+        toast.success("Profile picture updated!");
+      }
+
+      // Determine what text fields changed
+      const updates: { bio?: string; username?: string; avatarUrl?: string } = {};
+      if (editBio !== (user.bio ?? "")) updates.bio = editBio;
+      if (editUsername !== user.username) updates.username = editUsername;
+      if (avatarFile) updates.avatarUrl = avatarUrl ?? undefined;
+
+      if (Object.keys(updates).length > 0) {
+        await apiUpdateProfile(numId, updates);
+        if (updates.username) toast.success("Username updated!");
+        else if (updates.bio !== undefined) toast.success("Profile updated!");
+      }
+
+      // Refresh profile data and context if self
+      await load();
+      if (isSelf) await refreshUser();
+
       setEditing(false);
-      load();
+      setAvatarFile(null);
+      setAvatarPreview(null);
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Failed to save.");
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleCancelEdit = () => {
+    if (!user) return;
+    setEditing(false);
+    setEditBio(user.bio ?? "");
+    setEditUsername(user.username);
+    setAvatarFile(null);
+    setAvatarPreview(null);
   };
 
   if (loading) {
@@ -149,6 +230,8 @@ export function Profile({ id }: ProfileProps) {
     ? new Date(user.lastActiveAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
     : null;
 
+  const cooldown = getUsernameCooldownInfo(user.lastUsernameChangeAt);
+
   // Sorted entries
   const sortedEntries = [...entries].sort((a, b) => {
     if (entrySort === "votes") return b.voteCount - a.voteCount;
@@ -171,12 +254,60 @@ export function Profile({ id }: ProfileProps) {
         className="bg-card border border-card-border rounded-2xl p-5 mb-4">
 
         <div className="flex items-start gap-4">
-          <Avatar user={user} size="lg" />
+          {/* Avatar with upload overlay in edit mode */}
+          <div className="relative flex-shrink-0">
+            <Avatar user={user} size="lg" preview={avatarPreview} />
+            {editing && (
+              <>
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/jpeg,image/jpg,image/png,image/webp"
+                  className="hidden"
+                  onChange={handleAvatarChange}
+                />
+                <button
+                  type="button"
+                  onClick={() => avatarInputRef.current?.click()}
+                  className="absolute inset-0 rounded-2xl bg-black/60 flex flex-col items-center justify-center gap-1 hover:bg-black/70 transition-colors"
+                >
+                  <Camera className="w-5 h-5 text-white" />
+                  <span className="text-white text-[10px] font-bold leading-none">Change</span>
+                </button>
+              </>
+            )}
+          </div>
 
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2 flex-wrap">
-              <div className="min-w-0">
-                <h1 className="text-xl font-black text-foreground leading-none">@{user.username}</h1>
+              <div className="min-w-0 flex-1">
+                {editing ? (
+                  <div className="space-y-0.5">
+                    <input
+                      value={editUsername}
+                      onChange={(e) => setEditUsername(e.target.value)}
+                      maxLength={24}
+                      placeholder="Username"
+                      className="w-full bg-secondary rounded-xl px-3 py-2 text-sm font-bold text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                    />
+                    {!cooldown.canChange && (
+                      <p className="text-[11px] text-amber-400 leading-tight">
+                        Username locked until{" "}
+                        {cooldown.nextAllowed?.toLocaleDateString("en-US", {
+                          month: "short", day: "numeric", year: "numeric",
+                        })}
+                      </p>
+                    )}
+                    {cooldown.canChange && editUsername !== user.username && (
+                      <p className="text-[11px] text-muted-foreground leading-tight">
+                        You can only change your username once every 30 days.
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <h1 className="text-xl font-black text-foreground leading-none">@{user.username}</h1>
+                )}
+
                 <div className="flex flex-wrap gap-1.5 mt-1.5">
                   {user.isAdmin && (
                     <span className="inline-flex items-center text-xs font-semibold text-amber-400 px-2 py-0.5 rounded-full bg-amber-400/15">
@@ -193,7 +324,7 @@ export function Profile({ id }: ProfileProps) {
                       onClick={() => setEditing(true)}
                       className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors px-2 py-0.5 rounded-full hover:bg-primary/10"
                     >
-                      <Pencil className="w-3 h-3" /> Edit
+                      <Pencil className="w-3 h-3" /> Edit Profile
                     </button>
                   )}
                 </div>
@@ -213,19 +344,13 @@ export function Profile({ id }: ProfileProps) {
                     className="w-full bg-secondary rounded-xl px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
                     rows={2}
                   />
-                  <input
-                    value={editAvatarUrl}
-                    onChange={(e) => setEditAvatarUrl(e.target.value)}
-                    placeholder="Avatar URL (e.g. https://…)"
-                    className="w-full bg-secondary rounded-xl px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                  />
                   <div className="flex gap-2">
                     <button onClick={handleSaveProfile} disabled={saving}
                       className="flex items-center gap-1.5 text-xs font-bold bg-primary text-white px-3 py-1.5 rounded-lg hover:bg-primary/90 disabled:opacity-60">
                       <Check className="w-3.5 h-3.5" /> {saving ? "Saving…" : "Save"}
                     </button>
-                    <button onClick={() => { setEditing(false); setEditBio(user.bio ?? ""); setEditAvatarUrl(user.avatarUrl ?? ""); }}
-                      className="flex items-center gap-1.5 text-xs text-muted-foreground px-3 py-1.5 rounded-lg hover:bg-secondary">
+                    <button onClick={handleCancelEdit} disabled={saving}
+                      className="flex items-center gap-1.5 text-xs text-muted-foreground px-3 py-1.5 rounded-lg hover:bg-secondary disabled:opacity-60">
                       <X className="w-3.5 h-3.5" /> Cancel
                     </button>
                   </div>
@@ -251,6 +376,15 @@ export function Profile({ id }: ProfileProps) {
             </div>
           </div>
         </div>
+
+        {/* Avatar upload hint when editing */}
+        {editing && avatarFile && (
+          <div className="mt-3 pt-3 border-t border-border">
+            <p className="text-xs text-emerald-400 flex items-center gap-1.5">
+              <Check className="w-3 h-3" /> New photo ready to save: {avatarFile.name}
+            </p>
+          </div>
+        )}
 
         {/* Badges */}
         {badges.length > 0 && (

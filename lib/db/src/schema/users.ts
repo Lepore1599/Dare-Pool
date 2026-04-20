@@ -20,6 +20,7 @@ export const usersTable = pgTable("users", {
   bio: text("bio"),
   avatarUrl: text("avatar_url"),
   lastActiveAt: timestamp("last_active_at"),
+  lastUsernameChangeAt: timestamp("last_username_change_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -38,6 +39,7 @@ export const insertUserSchema = createInsertSchema(usersTable).omit({
   bio: true,
   avatarUrl: true,
   lastActiveAt: true,
+  lastUsernameChangeAt: true,
   createdAt: true,
 });
 
@@ -55,6 +57,13 @@ export const loginSchema = z.object({
 export const updateProfileSchema = z.object({
   bio: z.string().trim().max(200, "Bio must be 200 characters or less.").optional(),
   avatarUrl: z.string().trim().max(500).optional(),
+  username: z
+    .string()
+    .trim()
+    .min(2, "Username must be at least 2 characters.")
+    .max(24, "Username must be 24 characters or less.")
+    .regex(/^[a-zA-Z0-9_]+$/, "Only letters, numbers, and underscores are allowed.")
+    .optional(),
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;

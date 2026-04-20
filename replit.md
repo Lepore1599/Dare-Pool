@@ -57,8 +57,17 @@ POST `/api/seed` to populate demo dares/users:
 - **Stats computed** live from entries/comments/votes tables on every request — always accurate
 - **Badges**: First Win 🔥, Champion 👑, Legend 🏆, Top Performer 🌟, Competitor 📋, Active Competitor 🎯, Commentator 💬, Hot Streak ⚡, Clean Account ✅, Early User 🚀
 - **Tabs**: Entries (with sort: newest / most voted / winners only), Wins, Comments
-- **Edit profile**: bio (200 chars max) + avatar URL — only visible on own profile
+- **Edit profile**: bio + avatar upload (from device) + username change — only visible on own profile
+- **Avatar upload**: `POST /api/users/:id/avatar` (multer, jpg/jpeg/png/webp, max 5MB, stored in `uploads/avatars/`)
+- **Username cooldown**: 30-day server-enforced limit tracked via `lastUsernameChangeAt` DB column; admins bypass; error includes next allowed date
 - **Clickable usernames everywhere**: Home feed, Dare Detail, Leaderboard, Comments, TikTok feed
+- **Video submissions**: upload-only (no link pasting); `capture="environment"` hint for mobile camera roll
+
+## Submission System
+
+- **Upload only** — link-based submission UI removed; only file upload allowed
+- **Server-side validation** for video type (mp4/webm/mov/avi) and size (200MB max)
+- **Mobile-native upload zone** with tap target, file name preview, upload progress bar
 
 ## DB Schema (lib/db/src/schema/)
 

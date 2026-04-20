@@ -60,6 +60,7 @@ export interface ApiUser {
   strikeCount?: number;
   createdAt: string;
   lastActiveAt: string | null;
+  lastUsernameChangeAt?: string | null;
 }
 
 export interface ApiBadge {
@@ -245,11 +246,27 @@ export async function apiGetUser(id: number) {
   }>("GET", `/users/${id}`);
 }
 
-export async function apiUpdateProfile(id: number, data: { bio?: string; avatarUrl?: string }) {
-  return request<{ user: Pick<ApiUser, "id" | "username" | "bio" | "avatarUrl"> }>(
+export async function apiUpdateProfile(
+  id: number,
+  data: { bio?: string; avatarUrl?: string; username?: string }
+) {
+  return request<{
+    user: Pick<ApiUser, "id" | "username" | "bio" | "avatarUrl" | "lastUsernameChangeAt">;
+  }>(
     "PATCH",
     `/users/${id}`,
     data
+  );
+}
+
+export async function apiUploadAvatar(id: number, file: File) {
+  const form = new FormData();
+  form.append("avatar", file);
+  return request<{ user: { id: number; username: string; avatarUrl: string }; avatarUrl: string }>(
+    "POST",
+    `/users/${id}/avatar`,
+    form,
+    true
   );
 }
 

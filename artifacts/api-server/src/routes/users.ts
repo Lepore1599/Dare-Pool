@@ -1,8 +1,14 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { usersTable, daresTable, entriesTable, commentsTable, updateProfileSchema } from "@workspace/db";
-import { eq, desc, count } from "drizzle-orm";
+import { eq, desc, count, ne } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth";
+import { avatarUpload } from "../lib/uploads";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const router = Router();
 
@@ -143,6 +149,7 @@ router.get("/:id", async (req, res) => {
     bestWinStreak: Math.max(bestStreak, user.bestWinStreak),
     totalPrizeEarnings, maxVotesOnEntry, winRate,
     createdAt: user.createdAt, lastActiveAt: user.lastActiveAt,
+    lastUsernameChangeAt: (isAdminReq || isSelf) ? user.lastUsernameChangeAt : undefined,
     ...(isAdminReq || isSelf ? { strikeCount: user.strikeCount } : {}),
   };
 
@@ -164,6 +171,53 @@ router.get("/:id", async (req, res) => {
   });
 });
 
+// ─── POST /api/users/:id/avatar — upload profile picture ─────────────────────
+
+router.post(
+  "/:id/avatar",
+  requireAuth,
+  avatarUpload.single("avatar"),
+  async (req, res) => {
+    const id = parseInt(req.params["id"] as string);
+    if (isNaN(id)) { res.status(400).json({ error: "Invalid user ID." }); return; }
+
+    if (req.user!.userId !== id && !req.user!.isAdmin) {
+      // Clean up uploaded file if auth fails
+      if (req.file) fs.unlink(req.file.path, () => {});
+      res.status(403).json({ error: "You can only update your own profile picture." });
+      return;
+    }
+
+    if (!req.file) {
+      res.status(400).json({ error: "No image file uploaded." });
+      return;
+    }
+
+    // Delete old avatar file if it was a local upload
+    const [existing] = await db
+      .select({ avatarUrl: usersTable.avatarUrl })
+      .from(usersTable)
+      .where(eq(usersTable.id, id))
+      .limit(1);
+
+    if (existing?.avatarUrl?.startsWith("/api/uploads/avatars/")) {
+      const oldFilename = existing.avatarUrl.replace("/api/uploads/avatars/", "");
+      const oldPath = path.resolve(__dirname, "../../uploads/avatars", oldFilename);
+      fs.unlink(oldPath, () => {}); // non-blocking, ignore errors
+    }
+
+    const avatarUrl = `/api/uploads/avatars/${req.file.filename}`;
+
+    const [updated] = await db
+      .update(usersTable)
+      .set({ avatarUrl })
+      .where(eq(usersTable.id, id))
+      .returning({ id: usersTable.id, username: usersTable.username, avatarUrl: usersTable.avatarUrl });
+
+    res.json({ user: updated, avatarUrl });
+  }
+);
+
 // ─── PATCH /api/users/:id ─────────────────────────────────────────────────────
 
 router.patch("/:id", requireAuth, async (req, res) => {
@@ -183,6 +237,52 @@ router.patch("/:id", requireAuth, async (req, res) => {
   if (parsed.data.bio !== undefined) updates["bio"] = parsed.data.bio || null;
   if (parsed.data.avatarUrl !== undefined) updates["avatarUrl"] = parsed.data.avatarUrl || null;
 
+  // ── Username change with 30-day cooldown ──────────────────────────────────
+  if (parsed.data.username !== undefined) {
+    const newUsername = parsed.data.username;
+
+    // Fetch current user data
+    const [currentUser] = await db
+      .select({ username: usersTable.username, lastUsernameChangeAt: usersTable.lastUsernameChangeAt })
+      .from(usersTable)
+      .where(eq(usersTable.id, id))
+      .limit(1);
+
+    if (!currentUser) { res.status(404).json({ error: "User not found." }); return; }
+
+    // Skip if username unchanged
+    if (newUsername !== currentUser.username) {
+      // Enforce 30-day cooldown (admin bypasses this)
+      if (!req.user!.isAdmin && currentUser.lastUsernameChangeAt) {
+        const daysSince = (Date.now() - new Date(currentUser.lastUsernameChangeAt).getTime()) / (1000 * 60 * 60 * 24);
+        if (daysSince < 30) {
+          const nextAllowed = new Date(
+            new Date(currentUser.lastUsernameChangeAt).getTime() + 30 * 24 * 60 * 60 * 1000
+          );
+          res.status(429).json({
+            error: `You can only change your username once every 30 days. You can change it again on ${nextAllowed.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}.`,
+            nextAllowedAt: nextAllowed.toISOString(),
+          });
+          return;
+        }
+      }
+
+      // Check uniqueness (case-insensitive)
+      const [conflict] = await db
+        .select({ id: usersTable.id })
+        .from(usersTable)
+        .where(eq(usersTable.username, newUsername))
+        .limit(1);
+
+      if (conflict && conflict.id !== id) {
+        res.status(409).json({ error: "That username is already taken." }); return;
+      }
+
+      updates["username"] = newUsername;
+      updates["lastUsernameChangeAt"] = new Date();
+    }
+  }
+
   if (Object.keys(updates).length === 0) {
     res.status(400).json({ error: "Nothing to update." }); return;
   }
@@ -191,7 +291,13 @@ router.patch("/:id", requireAuth, async (req, res) => {
     .update(usersTable)
     .set(updates)
     .where(eq(usersTable.id, id))
-    .returning({ id: usersTable.id, username: usersTable.username, bio: usersTable.bio, avatarUrl: usersTable.avatarUrl });
+    .returning({
+      id: usersTable.id,
+      username: usersTable.username,
+      bio: usersTable.bio,
+      avatarUrl: usersTable.avatarUrl,
+      lastUsernameChangeAt: usersTable.lastUsernameChangeAt,
+    });
 
   res.json({ user: updated });
 });

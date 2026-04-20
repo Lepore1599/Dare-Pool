@@ -41,13 +41,12 @@ const LEET_MAP: Record<string, string> = {
  *  1. Lower-case
  *  2. Apply leet substitutions
  *  3. Remove punctuation / special chars (keep letters & spaces)
- *  4. Collapse repeated letters (e.g. "kiillll" → "kil")
+ *  4. Collapse repeated letters > 2 (e.g. "kiillll" → "kill")
  *  5. Trim & collapse whitespace
  */
 export function normalizeText(input: string): string {
   let s = input.toLowerCase();
 
-  // Apply leet substitutions character by character
   s = s
     .split("")
     .map((c) => LEET_MAP[c] ?? c)
@@ -67,113 +66,189 @@ export function normalizeText(input: string): string {
 
 // ─── HARD BLOCK — Banned terms ───────────────────────────────────────────────
 // Do NOT expose these to the end user in error messages.
-// Add new entries freely; normalization handles leet variants automatically.
+// Each entry is normalized through the same pipeline before matching.
 const BANNED_TERMS: string[] = [
-  // Self-harm / suicide / bodily injury
-  "self harm", "selfharm", "self-harm",
-  "suicide", "suicidal", "kill yourself", "kys",
-  "cut yourself", "cut myself", "slit wrist", "wrist cutting",
-  "starvation", "starve yourself", "purge", "binge purge",
-  "overdose", "od yourself", "choke yourself", "choking challenge",
-  "blackout challenge", "pass out challenge",
+
+  // ── Self-harm / suicide (explicit) ────────────────────────────────────────
+  "self harm", "selfharm",
+  "suicide", "suicidal", "end my life", "end your life",
+  "end their life", "take your own life", "take my own life",
+  "kill yourself", "kill myself", "kys",
+  "want to die", "want to be dead",
+  "cut yourself", "cut myself", "cutting yourself", "cutting myself",
+  "slit wrist", "slit your wrist", "slit my wrist", "wrist cutting",
+  "starvation dare", "starve yourself", "purge yourself",
+  "binge and purge",
+  "overdose", "od yourself", "od on",
+  "choke yourself", "choke myself", "choking challenge",
+  "blackout challenge", "pass out challenge", "faint challenge",
   "skull breaker", "fire challenge", "tide pod", "bleach challenge",
+  "drink bleach", "drink poison", "swallow bleach",
+  "hang yourself", "hang myself", "hanging yourself", "hanging dare",
+  "noose dare", "noose yourself",
+  "drown yourself", "drown myself", "drowning dare",
+  "suffocate yourself", "suffocate myself",
+  "stop breathing", "hold breath until you pass out",
 
-  // Dangerous / lethal stunts
-  "train surfing", "building jumping", "roof jumping",
+  // ── Jumping from height / lethal falls ────────────────────────────────────
+  // These are the phrases the original filter missed — "jump off X" with any
+  // dangerous structure is treated as a hard block.
+  "jump off a bridge", "jump off the bridge", "jump off bridge",
+  "jump off a cliff", "jump off the cliff", "jump off cliff",
+  "jump off a building", "jump off the building", "jump off building",
+  "jump off a roof", "jump off the roof",
+  "jump off a balcony", "jump off the balcony", "jump off balcony",
+  "jump off a ledge", "jump off the ledge", "jump off ledge",
+  "jump off a skyscraper", "jump off a tower", "jump off a parking",
+  "jump off an overpass", "jump off overpass",
+  "jump off a highway", "jump off a freeway",
+  "jump from a bridge", "jump from bridge", "jump from a cliff",
+  "jump from a building", "jump from a roof", "jump from a balcony",
+  "jump from a ledge", "jump from height",
+  "leap off a bridge", "leap off a cliff", "leap off a building",
+  "leap off a roof", "leap off a balcony", "leap off a ledge",
+  "leap off bridge", "leap off cliff", "leap off building",
+  "leap from a bridge", "leap from a cliff", "leap from a building",
+  "throw yourself off", "throw yourself from",
+  "fall off a bridge", "fall off a cliff", "fall from a building",
+  "fall from height",
+  "building jump", "bridge jump", "cliff jump into",
+  "roof jump", "rooftop jump",
+
+  // ── Walk/run into traffic / in front of vehicles ──────────────────────────
+  "walk into traffic", "walk in front of a car", "walk in front of traffic",
+  "run into traffic", "run in front of a car", "run in front of a truck",
+  "step in front of a train", "step in front of a car", "step in front of traffic",
+  "jump in front of a train", "jump in front of a car", "jump in front of traffic",
+  "jump in front of a bus", "jump in front of a truck",
+  "lie in traffic", "lay in traffic", "play in traffic",
+  "stand in traffic", "stand in the middle of traffic",
+
+  // ── Physically dangerous / potentially lethal stunts ──────────────────────
+  "train surfing", "train hopping dare", "railway dare",
   "electrocute", "electrocution", "electric shock yourself",
-  "set yourself on fire", "light yourself on fire",
+  "electric fence challenge", "touch a live wire",
+  "set yourself on fire", "light yourself on fire", "light myself on fire",
+  "set yourself alight", "human torch",
+  "extreme stunt without safety",
+  "ghost riding",
+  "high speed crash dare",
 
-  // Illegal activity
-  "shoplift", "shoplifting", "steal from", "steal a",
-  "vandalize", "vandalism", "graffiti on", "break in", "breaking in",
+  // ── Bodily injury to self ─────────────────────────────────────────────────
+  "burn yourself", "burn myself",
+  "break your own", "break my own",
+  "injure yourself", "hurt yourself", "hurt myself",
+  "cause yourself pain", "cause yourself harm",
+  "bruise yourself", "bruise myself",
+
+  // ── Illegal activity ──────────────────────────────────────────────────────
+  "shoplift", "shoplifting",
+  "steal from", "steal a car", "steal money",
+  "vandalize", "vandalism", "graffiti on",
+  "break in", "breaking in", "break into",
   "trespass", "trespassing",
-  "drug deal", "sell drugs", "buy drugs", "meth", "heroin", "fentanyl", "cocaine",
-  "crack cocaine", "smoke crack", "shoot up", "inject drugs",
+  "drug deal", "sell drugs", "buy drugs",
+  "meth", "heroin", "fentanyl", "cocaine", "crack cocaine",
+  "smoke crack", "shoot up drugs", "inject drugs",
   "make a bomb", "build a bomb", "explosive device",
   "weapon smuggling", "gun smuggling",
   "identity theft", "credit card fraud", "wire fraud",
+  "hotwire a car", "steal a vehicle",
 
-  // Violence
-  "punch someone", "hit someone", "attack a", "assault a",
-  "kill a", "murder", "stab someone", "shoot someone",
-  "hurt an animal", "harm an animal", "kick a dog", "animal abuse",
+  // ── Violence toward others ─────────────────────────────────────────────────
+  "punch someone", "punch a stranger", "hit someone", "hit a stranger",
+  "attack a", "assault a",
+  "kill a", "murder",
+  "stab someone", "stab a",
+  "shoot someone", "shoot at",
+  "hurt an animal", "harm an animal", "kick a dog", "kick a cat",
+  "animal abuse", "animal cruelty",
   "fight a stranger", "jump someone",
+  "beat someone up",
 
-  // Sexual content
-  "nude", "nudes", "naked", "strip naked", "show genitals",
-  "flash", "flashing", "masturbat", "sex act", "sexual act",
-  "onlyfans dare", "nsfw",
+  // ── Sexual / explicit content ──────────────────────────────────────────────
+  "nude", "nudes", "naked",
+  "strip naked", "take off all clothes",
+  "show genitals", "expose yourself",
+  "flash", "flashing",
+  "masturbat",
+  "sex act", "sexual act",
+  "onlyfans dare", "nsfw dare",
+  "send nudes",
 
-  // Minors / exploitation
-  "child", "minor", "underage", "kids do", "children do",
-  "school bathroom", "locker room",
+  // ── Minors / exploitation ─────────────────────────────────────────────────
+  "involving a child", "involve a minor", "include a child",
+  "kids do this", "children do this",
+  "school bathroom dare", "locker room dare",
+  "underage",
 
-  // Hate speech / slurs — representative list; normalization catches leet variants
-  // (Not exhaustively listed here — covered via prefix/infix matching below)
-  "racist", "racism", "white supremac", "neo nazi", "neo-nazi",
-  "heil hitler", "ethnic cleansing", "genocide",
+  // ── Hate speech / slurs ───────────────────────────────────────────────────
+  "racist", "racism",
+  "white supremac", "white power", "neo nazi",
+  "heil hitler",
+  "ethnic cleansing", "genocide",
   "hate crime", "hate speech",
+  // Slur stems — normalization catches leet/obfuscated variants
+  "nigge", "nigga", "nigg",
+  "chink", "gook", "spick", "spic",
+  "kike", "hymie", "wetback", "beaner",
+  "coon ", "porch monkey",
+  "raghead", "towelhead",
+  "faggot", "fag dare",
+  "tranny slur",
+  "retard",
+  "mongoloid",
+  "cunt", "whore dare", "slut shaming",
 
-  // Explicit slurs — using partial stems so normalization catches variants
-  // (These are intentionally stored as normalized stems without full spelling
-  //  to avoid this source file itself being a slur repository)
-  "nigge", "nigga", "nigg", "chink", "gook", "spick", "spic",
-  "kike", "hymie", "wetback", "beaner", "coon", "jig", "porch monkey",
-  "raghead", "towelhead", "sandnigge", "cracker honky", "faggot",
-  "dyke", "tranny slur", "retard", "mongoloid",
-  "cunt", "whore", "slut shaming",
+  // ── Harassment / threats / doxxing ────────────────────────────────────────
+  "stalk", "stalking dare",
+  "dox", "doxx", "leak personal info", "leak address", "leak phone",
+  "send threats", "threaten someone",
+  "swat", "swatting",
+  "humiliate a specific person", "target a specific person",
+  "name and shame",
 
-  // Harassment / threats
-  "stalk", "dox", "doxx", "send threats", "threaten",
-  "swat", "swatting", "leak personal info", "leak address",
-  "humiliate a specific", "target specific",
-
-  // Extremist language
-  "jihad", "infidel kill", "crusade kill", "race war", "great replacement",
+  // ── Extremist content ─────────────────────────────────────────────────────
+  "race war", "great replacement",
   "14 words", "88 heil",
 
-  // Degrading / abusive challenges
-  "slave challenge", "act like a slave", "cotton pick",
-  "beg like a dog", "bark like a dog for me",
+  // ── Degrading / abusive challenges ────────────────────────────────────────
+  "act like a slave", "cotton picking",
+  "beg like a dog for me",
 ];
 
 // ─── SOFT FLAG — Borderline / risky terms ────────────────────────────────────
+// These get a confirmation warning but are not outright blocked.
 const FLAGGED_TERMS: string[] = [
-  // Mild physical risk
-  "jump off", "climb on roof", "roof",
+  // Mild physical risk (non-lethal)
+  "climb on roof",
   "speed dare", "drive fast", "race car",
   "cold water", "ice bath", "ice bucket",
   "hot food challenge", "spicy challenge",
   "drink raw", "eat raw",
-  "no hands",
 
   // Social awkwardness / embarrassment
-  "prank", "fool", "trick someone", "embarrass", "humiliat",
+  "prank", "embarrass", "humiliat",
   "public meltdown", "pretend to cry",
   "beg in public", "beg for money",
+  "fool someone", "trick someone",
 
-  // Mild language flags
+  // Mild language
   "stupid", "idiot", "moron", "dumb",
   "shut up", "loser",
 
-  // Borderline content
+  // Borderline / gray area
   "sneak into", "sneak in",
-  "fake id", "get into a bar",
   "skip school", "ditch class",
   "lie to", "deceive",
-  "gross", "disgusting",
+  "gross out", "disgust",
 ];
 
 // ─── Matching helpers ─────────────────────────────────────────────────────────
 
 function containsTerm(normalizedText: string, term: string): boolean {
-  // Normalize the term itself the same way
   const normalizedTerm = normalizeText(term);
   if (!normalizedTerm) return false;
-
-  // Use word-boundary-aware partial match:
-  // Allow if the term appears as a standalone word or as part of a longer token
-  // (partial matching is intentional for stems like "nigge", "suicid" etc.)
   return normalizedText.includes(normalizedTerm);
 }
 

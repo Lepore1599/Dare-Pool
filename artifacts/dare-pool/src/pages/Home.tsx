@@ -3,6 +3,7 @@ import { Link } from "wouter";
 import { Flame, Trophy, Plus, Users, ChevronRight, Zap } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { getDares, type Dare, isExpired, seedIfEmpty } from "@/lib/store";
+import { isDareFlagged } from "@/lib/reports";
 import { CountdownBadge } from "@/components/CountdownBadge";
 import { Button } from "@/components/ui/button";
 import { useUser } from "@/context/UserContext";
@@ -25,7 +26,8 @@ export function Home({ onLoginClick }: HomeProps) {
     load();
   }, [load]);
 
-  const active = dares.filter((d) => !isExpired(d));
+  // Flagged dares are hidden from the homepage feed pending review
+  const active = dares.filter((d) => !isExpired(d) && !isDareFlagged(d.id));
   const ended = dares.filter((d) => isExpired(d));
   const displayed = filter === "active" ? active : ended;
 

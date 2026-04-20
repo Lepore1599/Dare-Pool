@@ -1,0 +1,86 @@
+Add a strict content moderation system for all dares.
+
+GOAL:
+Automatically block or flag unsafe, illegal, harmful, offensive, hateful, abusive, or inappropriate dares before they are posted, while keeping the platform fun and safe.
+
+REQUIREMENTS:
+
+1. HARD REJECT / BLOCKED CONTENT
+Do NOT allow dares that include or encourage any of the following:
+- Self-harm, suicide, injury, starvation, choking, cutting, overdose, or anything physically dangerous
+- Dangerous stunts or reckless behavior that could cause serious harm
+- Illegal activity such as theft, vandalism, trespassing, drugs, weapons misuse, fraud, or property damage
+- Violence toward other people or animals
+- Harassment, bullying, threats, intimidation, stalking, humiliation, or targeting specific individuals/groups
+- Sexual or explicit content
+- Anything involving minors in unsafe, exploitative, or inappropriate situations
+- Racism, slurs, hate speech, or discrimination based on race, ethnicity, nationality, religion, gender, sexuality, disability, or other protected characteristics
+- Offensive, abusive, degrading, or vulgar language meant to attack or demean others
+- Extremist, hateful, or dehumanizing language
+- Disguised, censored, symbol-substituted, or misspelled versions of slurs, hateful terms, or offensive language
+
+If detected:
+- Prevent submission immediately
+- Show message: “This dare violates community guidelines and cannot be posted.”
+
+2. SOFT WARNING / FLAGGED CONTENT
+For borderline dares that may be risky, rude, or socially inappropriate but not severe enough for an automatic block:
+- Show warning popup:
+  “This dare may be risky or inappropriate. Please revise it or confirm if you want to continue.”
+- Let the user either edit the dare or confirm before posting
+
+Examples of soft-flag cases:
+- Mild prank dares
+- Socially awkward or embarrassing dares
+- Language that is questionable but not clearly hateful or dangerous
+
+3. IMPLEMENTATION
+- Check both the dare title and description
+- Use keyword filtering with separate arrays/lists for:
+  - banned terms/phrases
+  - flagged terms/phrases
+- Make filtering case-insensitive
+- Detect partial matches where appropriate
+- Normalize text before checking by:
+  - converting to lowercase
+  - removing punctuation and extra spaces
+  - replacing common leetspeak / symbol substitutions (example: @ -> a, 1 -> i/l, 3 -> e, 5 -> s, 0 -> o)
+  - stripping repeated symbols/spaces meant to bypass filters
+- Include logic to catch simple obfuscation and misspellings of harmful or offensive words
+- Do not expose the exact blocked keywords to the user
+
+4. SAFETY + EXTENSIBILITY
+- Keep moderation rules organized and easy to update later
+- Store banned and flagged keywords in clearly labeled arrays/constants
+- Add placeholder comments for future upgrades such as:
+  - AI moderation
+  - admin review system
+  - trust/safety dashboard
+  - smarter context-based moderation
+- Structure the code so moderation can be reused anywhere dares are created or edited
+
+5. USER EXPERIENCE
+- Keep messages neutral, simple, and non-accusatory
+- Use:
+  - “This dare violates community guidelines and cannot be posted.”
+  - “This dare may be risky or inappropriate. Please revise it or confirm if you want to continue.”
+- Do not reveal which exact word or phrase triggered the moderation
+
+6. REPORT SYSTEM
+Add a “Report Dare” button on each dare.
+Users should be able to report a dare for reasons such as:
+- Dangerous / self-harm
+- Illegal activity
+- Harassment / bullying
+- Hate speech / racism
+- Sexual / inappropriate
+- Offensive language
+- Other
+
+When a dare is reported:
+- Mark it as reported
+- Hide it or flag it for review
+- Prevent it from being featured until reviewed
+
+7. GOAL
+Make the platform feel fun, competitive, and creative while preventing harmful, illegal, hateful, abusive, or offensive dares from being created or spread.

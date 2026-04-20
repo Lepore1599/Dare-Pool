@@ -2,7 +2,16 @@
 
 ## Overview
 
-pnpm workspace monorepo using TypeScript. Each package manages its own dependencies.
+pnpm workspace monorepo using TypeScript. Includes DarePool — a mobile-first dark-mode web app where users compete to complete dares for a prize pool.
+
+## DarePool App (`artifacts/dare-pool`)
+
+- **Frontend only** — all data stored in `localStorage`, no backend required
+- **Pages**: Home (dare feed), Create Dare, Dare Detail (voting + submissions), Leaderboard
+- **Auth**: Username-only (localStorage)
+- **Content moderation**: `src/lib/moderation.ts` — hard-block + soft-warn keyword system with leet-speak normalization
+- **Report system**: `src/lib/reports.ts` — users can report dares; reported dares are hidden from the feed
+- **Key components**: `ModerationDialogs.tsx`, `ReportModal.tsx`, `SubmitEntryModal.tsx`, `LoginModal.tsx`
 
 ## Stack
 

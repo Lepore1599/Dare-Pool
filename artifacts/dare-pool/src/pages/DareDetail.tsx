@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useLocation } from "wouter";
-import { ArrowLeft, Trophy, Users, ThumbsUp, Crown, Video, Link2, Upload } from "lucide-react";
+import { ArrowLeft, Trophy, Users, ThumbsUp, Crown, Video, Link2, Upload, Flag } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   getDareById,
@@ -12,11 +12,13 @@ import {
   type Dare,
   type Submission,
 } from "@/lib/store";
+import { isDareFlagged } from "@/lib/reports";
 import { useUser } from "@/context/UserContext";
 import { CountdownBadge } from "@/components/CountdownBadge";
 import { Button } from "@/components/ui/button";
 import { LoginModal } from "@/components/LoginModal";
 import { SubmitEntryModal } from "@/components/SubmitEntryModal";
+import { ReportModal } from "@/components/ReportModal";
 import { cn } from "@/lib/utils";
 
 interface DareDetailProps {
@@ -31,26 +33,30 @@ export function DareDetail({ id }: DareDetailProps) {
   const [userVoted, setUserVoted] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
   const [showSubmit, setShowSubmit] = useState(false);
+  const [showReport, setShowReport] = useState(false);
   const [votedSubId, setVotedSubId] = useState<string | null>(null);
   const [voteAnimation, setVoteAnimation] = useState<string | null>(null);
+  const [flagged, setFlagged] = useState(false);
 
   const load = useCallback(() => {
     const d = getDareById(id);
     if (!d) return;
     if (isExpired(d)) finalizeWinners(id);
     setDare(d);
+    setFlagged(isDareFlagged(id));
+
     const subs = getSubmissions(id);
     subs.sort((a, b) => b.votes - a.votes);
     setSubmissions(subs);
+
     if (username) {
       setUserVoted(hasVoted(id, username));
-      const myVote = subs.find((s) => {
-        const votes = JSON.parse(localStorage.getItem("darepool_votes") || "[]");
-        return votes.some((v: { dareId: string; submissionId: string; username: string }) =>
-          v.dareId === id && v.submissionId === s.id && v.username === username
-        );
-      });
-      if (myVote) setVotedSubId(myVote.id);
+      const storedVotes = JSON.parse(localStorage.getItem("darepool_votes") || "[]");
+      const myVoteRecord = storedVotes.find(
+        (v: { dareId: string; submissionId: string; username: string }) =>
+          v.dareId === id && v.username === username
+      );
+      if (myVoteRecord) setVotedSubId(myVoteRecord.submissionId);
     }
   }, [id, username]);
 
@@ -106,6 +112,14 @@ export function DareDetail({ id }: DareDetailProps) {
           load();
         }}
       />
+      <ReportModal
+        open={showReport}
+        dareId={id}
+        onClose={() => {
+          setShowReport(false);
+          load();
+        }}
+      />
 
       <button
         onClick={() => setLocation("/")}
@@ -115,6 +129,21 @@ export function DareDetail({ id }: DareDetailProps) {
         <ArrowLeft className="w-4 h-4" />
         Back
       </button>
+
+      {/* Flagged notice */}
+      <AnimatePresence>
+        {flagged && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex items-center gap-2 bg-amber-400/10 border border-amber-400/25 rounded-xl px-4 py-2.5 mb-4 text-sm text-amber-400"
+            data-testid="dare-flagged-notice"
+          >
+            <Flag className="w-4 h-4 flex-shrink-0" />
+            This dare has been reported and is under review.
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Header card */}
       <motion.div
@@ -154,22 +183,35 @@ export function DareDetail({ id }: DareDetailProps) {
               <span className="font-semibold text-foreground">{dare.submissionCount}</span> entries
             </span>
           </div>
-          {!expired && (
-            <Button
-              onClick={() => {
-                if (!username) {
-                  setShowLogin(true);
-                } else {
-                  setShowSubmit(true);
-                }
-              }}
-              className="bg-primary hover:bg-primary/90 text-white font-bold glow-primary-sm"
-              data-testid="btn-submit-entry"
+          <div className="flex items-center gap-2">
+            {/* Report button */}
+            <button
+              onClick={() => setShowReport(true)}
+              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive transition-colors px-2 py-1.5 rounded-lg hover:bg-destructive/10"
+              title="Report this dare"
+              data-testid="btn-report-dare"
             >
-              <Upload className="w-4 h-4 mr-1.5" />
-              Submit Entry
-            </Button>
-          )}
+              <Flag className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Report</span>
+            </button>
+
+            {!expired && (
+              <Button
+                onClick={() => {
+                  if (!username) {
+                    setShowLogin(true);
+                  } else {
+                    setShowSubmit(true);
+                  }
+                }}
+                className="bg-primary hover:bg-primary/90 text-white font-bold glow-primary-sm"
+                data-testid="btn-submit-entry"
+              >
+                <Upload className="w-4 h-4 mr-1.5" />
+                Submit Entry
+              </Button>
+            )}
+          </div>
         </div>
       </motion.div>
 

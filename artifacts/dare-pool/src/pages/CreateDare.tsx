@@ -3,11 +3,13 @@ import { useLocation } from "wouter";
 import { ArrowLeft, Flame, DollarSign } from "lucide-react";
 import { motion } from "framer-motion";
 import { createDare } from "@/lib/store";
+import { moderate, type ModerationResult } from "@/lib/moderation";
 import { useUser } from "@/context/UserContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { LoginModal } from "@/components/LoginModal";
+import { HardBlockDialog, SoftWarningDialog } from "@/components/ModerationDialogs";
 
 export function CreateDare() {
   const { username } = useUser();
@@ -18,6 +20,11 @@ export function CreateDare() {
   const [prizePool, setPrizePool] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
+
+  // Moderation state
+  const [modResult, setModResult] = useState<ModerationResult | null>(null);
+  const [showHardBlock, setShowHardBlock] = useState(false);
+  const [showSoftWarn, setShowSoftWarn] = useState(false);
 
   const validate = () => {
     const e: Record<string, string> = {};
@@ -31,17 +38,7 @@ export function CreateDare() {
     return e;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!username) {
-      setShowLogin(true);
-      return;
-    }
-    const errs = validate();
-    if (Object.keys(errs).length > 0) {
-      setErrors(errs);
-      return;
-    }
+  const doPost = () => {
     setSubmitting(true);
     const now = Date.now();
     const dare = createDare({
@@ -50,9 +47,41 @@ export function CreateDare() {
       prizePool: Number(prizePool),
       createdAt: now,
       expiresAt: now + 48 * 60 * 60 * 1000,
-      createdBy: username,
+      createdBy: username!,
     });
     setLocation(`/dare/${dare.id}`);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!username) {
+      setShowLogin(true);
+      return;
+    }
+
+    const errs = validate();
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs);
+      return;
+    }
+
+    // Run moderation check
+    const result = moderate(title, description);
+    setModResult(result);
+
+    if (result.outcome === "hard") {
+      setShowHardBlock(true);
+      return;
+    }
+
+    if (result.outcome === "soft") {
+      setShowSoftWarn(true);
+      return;
+    }
+
+    // Clean — post immediately
+    doPost();
   };
 
   return (
@@ -61,6 +90,24 @@ export function CreateDare() {
         open={showLogin}
         onClose={() => setShowLogin(false)}
         onSuccess={() => {}}
+      />
+
+      {/* Hard block dialog */}
+      <HardBlockDialog
+        open={showHardBlock}
+        message={modResult?.message ?? ""}
+        onClose={() => setShowHardBlock(false)}
+      />
+
+      {/* Soft warning dialog */}
+      <SoftWarningDialog
+        open={showSoftWarn}
+        message={modResult?.message ?? ""}
+        onCancel={() => setShowSoftWarn(false)}
+        onConfirm={() => {
+          setShowSoftWarn(false);
+          doPost();
+        }}
       />
 
       <button
@@ -176,6 +223,11 @@ export function CreateDare() {
             <p className="text-sm text-primary/90 font-medium">
               Dare expires in 48 hours. The entry with the most votes wins the prize pool.
             </p>
+          </div>
+
+          {/* Community guidelines reminder */}
+          <div className="bg-secondary rounded-xl px-4 py-3 text-xs text-muted-foreground leading-relaxed">
+            Dares must be safe, legal, and respectful. Harmful, hateful, or illegal content will be blocked.
           </div>
 
           <Button

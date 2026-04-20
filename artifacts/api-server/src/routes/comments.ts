@@ -1,18 +1,16 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { commentsTable, usersTable, entriesTable, createCommentSchema } from "@workspace/db";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth";
+import { touchLastActive } from "./users";
 
 const router = Router({ mergeParams: true });
 
 // GET /api/entries/:entryId/comments
 router.get("/", async (req, res) => {
   const entryId = parseInt((req.params as Record<string, string>)["entryId"]);
-  if (isNaN(entryId)) {
-    res.status(400).json({ error: "Invalid entry ID." });
-    return;
-  }
+  if (isNaN(entryId)) { res.status(400).json({ error: "Invalid entry ID." }); return; }
 
   const rows = await db
     .select({
@@ -34,15 +32,11 @@ router.get("/", async (req, res) => {
 // POST /api/entries/:entryId/comments
 router.post("/", requireAuth, async (req, res) => {
   const entryId = parseInt((req.params as Record<string, string>)["entryId"]);
-  if (isNaN(entryId)) {
-    res.status(400).json({ error: "Invalid entry ID." });
-    return;
-  }
+  if (isNaN(entryId)) { res.status(400).json({ error: "Invalid entry ID." }); return; }
 
   const parsed = createCommentSchema.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Invalid comment." });
-    return;
+    res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Invalid comment." }); return;
   }
 
   const [entry] = await db
@@ -51,19 +45,20 @@ router.post("/", requireAuth, async (req, res) => {
     .where(eq(entriesTable.id, entryId))
     .limit(1);
 
-  if (!entry) {
-    res.status(404).json({ error: "Entry not found." });
-    return;
-  }
+  if (!entry) { res.status(404).json({ error: "Entry not found." }); return; }
 
   const [inserted] = await db
     .insert(commentsTable)
-    .values({
-      entryId,
-      userId: req.user!.userId,
-      content: parsed.data.content,
-    })
+    .values({ entryId, userId: req.user!.userId, content: parsed.data.content })
     .returning();
+
+  // Increment comment counter and update last active (non-blocking)
+  Promise.all([
+    db.update(usersTable)
+      .set({ totalComments: sql`${usersTable.totalComments} + 1` })
+      .where(eq(usersTable.id, req.user!.userId)),
+    touchLastActive(req.user!.userId),
+  ]).catch(() => {});
 
   const [withUser] = await db
     .select({

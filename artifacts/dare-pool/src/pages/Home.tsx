@@ -129,7 +129,13 @@ function DareCard({ dare, index }: { dare: ApiDare; index: number }) {
                 ) : (
                   <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/20 text-primary">Live</span>
                 )}
-                <span className="text-xs text-muted-foreground">by {dare.createdByUsername}</span>
+                <Link
+                  href={`/profile/${dare.createdByUserId}`}
+                  onClick={(e) => e.stopPropagation()}
+                  className="text-xs text-muted-foreground hover:text-primary transition-colors"
+                >
+                  by {dare.createdByUsername}
+                </Link>
               </div>
               <h2 className="font-bold text-foreground text-base leading-snug line-clamp-2 group-hover:text-primary transition-colors">
                 {dare.title}

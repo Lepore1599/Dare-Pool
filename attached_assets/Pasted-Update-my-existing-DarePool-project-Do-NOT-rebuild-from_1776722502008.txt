@@ -1,0 +1,216 @@
+Update my existing DarePool project. Do NOT rebuild from scratch. Keep my current UI style, dark mode design, comments system, moderation system, reports system, and overall layout. Add a full user profile system that fits naturally into the current app.
+
+GOAL:
+Create profile pages that make users feel competitive, recognizable, and invested in the app.
+
+IMPORTANT:
+- Reuse my existing components and styling where possible
+- Do not remove or break my current comments feature
+- Do not remove or break current moderation/report systems
+- Keep everything mobile-friendly
+- Keep the app polished and modern
+- Keep usernames clickable throughout the app so users can open profiles from comments, entries, votes, and winners
+
+PROFILE FEATURES TO ADD:
+
+1. PROFILE PAGE BASICS
+Create a user profile page for each user.
+
+Show:
+- username
+- avatar (use generated placeholder if no upload system exists yet)
+- short bio (editable by the user)
+- join date
+- last active time if possible
+- badge area
+- stats overview
+
+2. PROFILE STATS
+Show clear competitive stats on the profile:
+
+- total wins
+- total entries submitted
+- total votes cast
+- total comments made
+- win rate percentage
+- current win streak
+- best win streak
+- top 3 finishes if possible
+- total prize earnings (if prize system exists, otherwise simulate from won dares)
+- most votes on a single entry
+
+Make these stats visually clean and easy to scan on mobile.
+
+3. USER CONTENT SECTIONS
+Add sections/tabs on the profile page for:
+
+- Entries
+- Wins
+- Comments
+
+ENTRIES SECTION:
+- Show all entries submitted by the user
+- Include dare title
+- vote count
+- submission date
+- status label if winner
+- sort options:
+  - newest
+  - most voted
+  - winners only
+
+WINS SECTION:
+- Show dares the user won
+- Include dare title
+- prize pool
+- total votes
+- completion date
+
+COMMENTS SECTION:
+- Show recent comments made by the user
+- Include which dare/entry the comment was posted on
+- link back to the related page
+- keep existing comments system working exactly as it currently does
+
+4. BADGES / ACHIEVEMENTS
+Add a badge/achievement system to profiles.
+
+Example badges:
+- First Win
+- Winner
+- 5 Wins
+- 10 Entries Submitted
+- 25 Comments
+- Early User
+- Active Competitor
+- Clean Account
+- Hot Streak
+- Top Performer
+
+Requirements:
+- badges should be automatically awarded based on profile activity
+- show earned badges on the profile
+- keep the system easy to expand later
+
+5. PROFILE EDITING
+Allow logged-in users to edit their own profile.
+
+Editable fields:
+- bio
+- avatar URL or simple avatar selection
+- display name only if the app supports display names separately from usernames
+
+Requirements:
+- users can only edit their own profile
+- validate and sanitize input
+- keep edit flow simple and mobile-friendly
+
+6. CLICKABLE USERNAMES
+Wherever a username appears in the app, make it clickable and route to that user’s profile.
+
+This includes:
+- comments
+- entries
+- leaderboard
+- winners
+- dare creator name
+- report/admin screens if relevant
+
+7. PROFILE HEADER EXPERIENCE
+Make the profile header feel like a real social/competition app.
+
+Include:
+- avatar
+- username
+- bio
+- badges
+- join date
+- core stat cards
+
+If possible add:
+- “Currently competing in X dares”
+- “Won X dares”
+- “Last active” label
+
+8. TRUST / SAFETY INTEGRATION
+Integrate profile system with moderation safely.
+
+Requirements:
+- public profile should NOT expose private moderation details
+- strike count / ban status should only be visible to admins
+- if a user is banned, their public profile should show a minimal unavailable or restricted state if appropriate
+- if user has a clean history, optionally show a “Clean Account” badge
+
+9. DATA / BACKEND SUPPORT
+Extend my existing data models or database to support profile data.
+
+Add fields as needed, such as:
+USERS:
+- bio
+- avatarUrl
+- createdAt
+- lastActiveAt
+- wins
+- totalEntries
+- totalVotesCast
+- totalComments
+- currentWinStreak
+- bestWinStreak
+- totalPrizeEarnings
+
+If needed, compute some fields dynamically instead of duplicating them.
+
+10. COMMENTS INTEGRATION
+Since my app already has comments, make sure the profile system uses them properly.
+
+Requirements:
+- count total comments per user
+- show a recent comments section on profile
+- link each comment back to the related dare or entry
+- preserve my existing comments feature and current UI behavior
+
+11. LEADERBOARD / SOCIAL FEEL
+Add small social/competitive touches:
+
+- highlight if the user is a top winner
+- highlight winner entries
+- show “member since” formatting nicely
+- show stat cards with subtle animations
+- make the page feel like a mix of social profile + competition history
+
+12. ADMIN SUPPORT
+For admins only, add an optional admin view on profiles.
+
+Admin-only fields:
+- strike count
+- report count
+- banned status
+- quick action buttons if admin system already exists
+
+Do NOT show admin-only moderation details to regular users.
+
+13. UX / DESIGN
+Keep the design:
+- dark mode
+- clean
+- modern
+- mobile-first
+- smooth but subtle animations
+- visually consistent with the rest of the app
+
+Do not make it look generic or plain.
+Do not remove any existing styling unless necessary.
+Keep profile cards, tabs, badges, and stat blocks polished.
+
+14. FINAL REQUIREMENTS
+When finished:
+- ensure profiles are fully connected to existing users
+- ensure usernames route correctly to profiles
+- ensure stats update after entries, wins, votes, and comments
+- ensure comments still work
+- do not break current pages or flows
+- explain what files were changed
+- explain how profile stats are calculated
+- explain how badges are awarded
+
+Build this directly into my existing project and keep it compatible with the rest of my DarePool app.

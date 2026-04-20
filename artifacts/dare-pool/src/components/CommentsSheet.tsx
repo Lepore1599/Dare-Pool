@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Send, MessageCircle } from "lucide-react";
 import { apiGetComments, apiAddComment, type ApiComment } from "@/lib/api";
+import { UserLink } from "./UserLink";
 import { useUser } from "@/context/UserContext";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -104,7 +105,7 @@ export function CommentsSheet({ open, entryId, onClose, onRequestLogin }: Commen
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-baseline gap-2 mb-0.5">
-                          <span className="font-semibold text-sm text-foreground">@{c.username ?? "user"}</span>
+                          <UserLink userId={c.userId} username={c.username} className="font-semibold text-sm text-foreground" />
                           <span className="text-[10px] text-muted-foreground">
                             {new Date(c.createdAt).toLocaleDateString()}
                           </span>

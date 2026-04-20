@@ -44,12 +44,55 @@ async function request<T>(
 export interface ApiUser {
   id: number;
   username: string;
+  bio: string | null;
+  avatarUrl: string | null;
   isAdmin: boolean;
   isBanned?: boolean;
   wins: number;
   totalEntries: number;
   totalVotesCast: number;
+  totalComments: number;
+  currentWinStreak: number;
+  bestWinStreak: number;
+  totalPrizeEarnings: number;
+  maxVotesOnEntry: number;
+  winRate: number;
   strikeCount?: number;
+  createdAt: string;
+  lastActiveAt: string | null;
+}
+
+export interface ApiBadge {
+  id: string;
+  label: string;
+  emoji: string;
+  description: string;
+}
+
+export interface ApiProfileEntry {
+  id: number;
+  dareId: number;
+  dareTitle: string;
+  voteCount: number;
+  status: string;
+  createdAt: string;
+}
+
+export interface ApiWin {
+  entryId: number;
+  dareId: number;
+  dareTitle: string;
+  prizePool: number;
+  voteCount: number;
+  completedAt: string;
+}
+
+export interface ApiProfileComment {
+  id: number;
+  entryId: number;
+  dareId: number | null;
+  dareTitle: string;
+  content: string;
   createdAt: string;
 }
 
@@ -195,9 +238,19 @@ export async function apiReport(payload: {
 export async function apiGetUser(id: number) {
   return request<{
     user: ApiUser;
-    dares: ApiDare[];
-    entries: ApiEntry[];
+    entries: ApiProfileEntry[];
+    wins: ApiWin[];
+    comments: ApiProfileComment[];
+    badges: ApiBadge[];
   }>("GET", `/users/${id}`);
+}
+
+export async function apiUpdateProfile(id: number, data: { bio?: string; avatarUrl?: string }) {
+  return request<{ user: Pick<ApiUser, "id" | "username" | "bio" | "avatarUrl"> }>(
+    "PATCH",
+    `/users/${id}`,
+    data
+  );
 }
 
 // ─── Admin ────────────────────────────────────────────────────────────────────

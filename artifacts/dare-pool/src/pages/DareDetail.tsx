@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useLocation } from "wouter";
 import { ArrowLeft, Trophy, Users, Crown, Video, Play, Upload, Flag, Heart } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Link } from "wouter";
 import { apiGetDare, apiGetEntries, apiVote, type ApiDare, type ApiEntry } from "@/lib/api";
 import { useUser } from "@/context/UserContext";
 import { CountdownBadge } from "@/components/CountdownBadge";
@@ -140,7 +141,7 @@ export function DareDetail({ id }: DareDetailProps) {
               ) : (
                 <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-primary/20 text-primary">Live</span>
               )}
-              <span className="text-xs text-muted-foreground">by {dare.createdByUsername}</span>
+              <Link href={`/profile/${dare.createdByUserId}`} className="text-xs text-muted-foreground hover:text-primary transition-colors">by {dare.createdByUsername}</Link>
             </div>
             <h1 className="text-xl font-black text-foreground leading-snug">{dare.title}</h1>
           </div>

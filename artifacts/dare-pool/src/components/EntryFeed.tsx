@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import type { ApiEntry } from "@/lib/api";
 import { apiGetComments } from "@/lib/api";
+import { UserLink } from "./UserLink";
 import { cn } from "@/lib/utils";
 import { CommentsSheet } from "./CommentsSheet";
 import { ReportModal } from "./ReportModal";
@@ -335,7 +336,7 @@ function FeedItem({
             {(entry.username ?? "?").slice(0, 1).toUpperCase()}
           </div>
           <div className="min-w-0">
-            <div className="text-white font-semibold text-sm truncate">@{entry.username ?? "user"}</div>
+            <UserLink userId={entry.userId} username={entry.username} className="text-white font-semibold text-sm hover:text-white/80" />
             <div className="text-white/60 text-xs">{new Date(entry.createdAt).toLocaleDateString()}</div>
           </div>
           {isWinner && (

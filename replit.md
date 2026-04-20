@@ -51,6 +51,15 @@ POST `/api/seed` to populate demo dares/users:
 - **File uploads**: Multer (200MB limit, MP4/WebM/MOV/AVI)
 - **Build**: esbuild (ESM bundle for API server)
 
+## Profile System
+
+- **Profile page** (`/profile/:id`) — full competitive profile with stats, badges, tabbed history
+- **Stats computed** live from entries/comments/votes tables on every request — always accurate
+- **Badges**: First Win 🔥, Champion 👑, Legend 🏆, Top Performer 🌟, Competitor 📋, Active Competitor 🎯, Commentator 💬, Hot Streak ⚡, Clean Account ✅, Early User 🚀
+- **Tabs**: Entries (with sort: newest / most voted / winners only), Wins, Comments
+- **Edit profile**: bio (200 chars max) + avatar URL — only visible on own profile
+- **Clickable usernames everywhere**: Home feed, Dare Detail, Leaderboard, Comments, TikTok feed
+
 ## DB Schema (lib/db/src/schema/)
 
 - `users` — id, username, email, passwordHash, isAdmin, isBanned, strikeCount, wins, totalEntries, totalVotesCast

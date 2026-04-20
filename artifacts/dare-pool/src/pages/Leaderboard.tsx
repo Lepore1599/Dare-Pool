@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Trophy, Crown, Users, Flame, Medal } from "lucide-react";
 import { motion } from "framer-motion";
+import { Link } from "wouter";
 import { apiGetDares, apiGetEntries, type ApiDare, type ApiEntry } from "@/lib/api";
 import { CountdownBadge } from "@/components/CountdownBadge";
 
@@ -33,18 +34,16 @@ export function Leaderboard() {
     })();
   }, []);
 
-  const winnerMap: Record<string, { wins: number; totalPrize: number }> = {};
+  const winnerMap: Record<number, { userId: number; username: string; wins: number; totalPrize: number }> = {};
   for (const dare of endedDares) {
     const winner = (entriesMap[dare.id] || []).find((e) => e.status === "winner");
-    if (winner?.username) {
-      winnerMap[winner.username] ??= { wins: 0, totalPrize: 0 };
-      winnerMap[winner.username].wins += 1;
-      winnerMap[winner.username].totalPrize += dare.prizePool;
+    if (winner?.username && winner.userId) {
+      winnerMap[winner.userId] ??= { userId: winner.userId, username: winner.username, wins: 0, totalPrize: 0 };
+      winnerMap[winner.userId].wins += 1;
+      winnerMap[winner.userId].totalPrize += dare.prizePool;
     }
   }
-  const topWinners = Object.entries(winnerMap)
-    .map(([username, d]) => ({ username, ...d }))
-    .sort((a, b) => b.totalPrize - a.totalPrize);
+  const topWinners = Object.values(winnerMap).sort((a, b) => b.totalPrize - a.totalPrize);
 
   const rankColors = ["text-amber-400", "text-gray-300", "text-amber-700"];
 
@@ -69,7 +68,9 @@ export function Leaderboard() {
                 transition={{ delay: i * 0.08 }}
                 className="bg-card border border-card-border rounded-2xl p-4 text-center">
                 <Medal className={`w-6 h-6 mx-auto mb-2 ${rankColors[i] || "text-muted-foreground"}`} />
-                <div className="font-black text-foreground text-sm">{w.username}</div>
+                <Link href={`/profile/${w.userId}`} className="font-black text-foreground text-sm hover:text-primary transition-colors">
+                  @{w.username}
+                </Link>
                 <div className="text-amber-400 font-bold">${w.totalPrize}</div>
                 <div className="text-xs text-muted-foreground mt-0.5">{w.wins} {w.wins === 1 ? "win" : "wins"}</div>
               </motion.div>
@@ -104,7 +105,7 @@ export function Leaderboard() {
                 <div className="flex items-start justify-between gap-3 mb-3">
                   <div className="flex-1 min-w-0">
                     <h3 className="font-bold text-foreground text-sm line-clamp-2">{dare.title}</h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">by {dare.createdByUsername}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">by <Link href={`/profile/${dare.createdByUserId}`} className="hover:text-primary transition-colors">{dare.createdByUsername}</Link></p>
                   </div>
                   <div className="text-right flex-shrink-0">
                     <div className="text-base font-black text-amber-400">${dare.prizePool}</div>
@@ -116,7 +117,7 @@ export function Leaderboard() {
                     <Crown className="w-4 h-4 text-amber-400 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
                       <span className="text-xs font-bold text-amber-400">Winner: </span>
-                      <span className="text-sm font-semibold text-foreground">{winner.username}</span>
+                      <Link href={`/profile/${winner.userId}`} className="text-sm font-semibold text-foreground hover:text-primary transition-colors">@{winner.username}</Link>
                     </div>
                     <span className="text-xs text-muted-foreground flex-shrink-0 flex items-center gap-1">
                       <Users className="w-3 h-3" /> {winner.voteCount} votes

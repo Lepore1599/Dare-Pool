@@ -1,0 +1,629 @@
+Update my existing DarePool project. Do NOT rebuild from scratch. Keep my current UI style, dark mode design, bottom tab navigation, profiles, moderation, reports, comments, reels, wallet, store, and overall layout.
+
+GOAL:
+1. Show a required User Agreement flow immediately during signup.
+2. Add a fully functional Settings area under the Profile tab, opened by a settings icon.
+3. Make the Settings menu feel like a real social app, similar in structure to Instagram, Snapchat, and TikTok settings, but adapted for DarePool.
+4. USE THE EXACT LEGAL TEXT PROVIDED BELOW in the legal pages and signup acceptance flow.
+
+IMPORTANT:
+- Reuse my current components, routes, styling, auth, and backend where possible
+- Do not remove or break current wallet, payouts, comments, dares, boosts, profile editing, moderation, or reports
+- Keep everything mobile-first and polished
+- Keep the design premium and dark
+- Do not rebuild the app from scratch
+- All important changes must be functional, not just mockups
+
+==================================================
+PART 1: REQUIRED USER AGREEMENT DURING SIGNUP
+==================================================
+
+Add a required agreement flow that appears immediately when a user signs up.
+
+REQUIREMENTS:
+- During signup, before account creation completes, show a full-screen modal / screen / popup flow for legal acceptance
+- The agreement must appear as part of signup, not later buried in settings
+- The user must explicitly accept before the account is created or activated
+- Do NOT allow signup to finish unless the user agrees
+
+UI REQUIREMENTS:
+- Show:
+  - a checkbox: "I agree to the Terms of Service"
+  - a checkbox: "I agree to the Community Guidelines"
+  - a checkbox: "I acknowledge the Safety and Risk Disclaimer"
+- Make all three required
+- Add clickable links/buttons to open:
+  - Terms of Service
+  - Community Guidelines
+  - Privacy Policy
+  - Safety and Risk Disclaimer
+- These legal pages should open in-app in a clean mobile-friendly viewer/page
+- Add a final action button such as:
+  - "Agree and Create Account"
+
+BEHAVIOR:
+- If the user closes the agreement or does not accept, signup does not complete
+- Store acceptance in the database with:
+  - userId
+  - acceptedTermsAt
+  - acceptedGuidelinesAt
+  - acceptedPrivacyAt if applicable
+  - acceptedRiskDisclaimerAt
+  - acceptedPolicyVersion
+- Add support for future policy versioning so I can require re-acceptance later if policies change
+
+DATABASE FIELDS:
+Add or extend user/legal acceptance support, for example:
+- termsAcceptedAt
+- guidelinesAcceptedAt
+- privacyAcceptedAt
+- riskAcceptedAt
+- acceptedPolicyVersion
+
+==================================================
+PART 2: LEGAL PAGES
+==================================================
+
+Create functional pages/screens for:
+- Terms of Service
+- Community Guidelines
+- Privacy Policy
+- Safety and Risk Disclaimer
+
+REQUIREMENTS:
+- Keep dark mode and readable formatting
+- Add headings, spacing, and mobile-friendly scrolling
+- Make these pages accessible from:
+  - signup agreement flow
+  - settings menu
+  - footer or profile/account area if applicable
+
+USE THE EXACT CONTENT BELOW FOR THE LEGAL PAGES.
+
+==================================================
+TERMS OF SERVICE PAGE CONTENT
+==================================================
+
+Title: Terms of Service
+Subtitle: Last Updated: [DATE]
+
+Body:
+
+Welcome to DarePool. By creating an account or using DarePool, you agree to these Terms of Service.
+
+1. Eligibility
+You must be at least 18 years old to use DarePool. By using this app, you confirm that you meet this requirement and that you are legally able to enter into this agreement.
+
+2. Use at Your Own Risk
+DarePool allows users to create dares, fund dares, submit videos, vote on submissions, and receive payouts according to app rules. Participation is completely voluntary. You are never required to participate in any dare, and any action you take is your own decision and responsibility.
+
+3. No Dangerous or Illegal Content
+You may not post, promote, fund, submit, or encourage dares involving self-harm, illegal activity, violence, abuse, harassment, hate speech, sexual exploitation, dangerous conduct, or any content that violates our rules or applicable law.
+
+4. No Guarantee of Earnings
+Using DarePool does not guarantee that you will receive any payout, reward, or profit. Outcomes depend on user activity, votes, moderation, participation, and app rules.
+
+5. Pool and Payout Rules
+Dares may receive funding from users. If a dare ends with a valid winning submission, the pool is distributed as follows:
+- 80% to the winning submission user
+- 10% to the original dare creator
+- 10% to the platform
+
+If a dare ends with no valid submissions, the full pool may be transferred to another eligible active dare according to app rules. No refunds are guaranteed.
+
+6. Payments and Wallet
+Deposits, withdrawals, and payouts may be processed through third-party payment providers. DarePool does not store raw payment card or bank information. Withdrawals may require identity verification or additional review.
+
+7. User Content
+You are solely responsible for any dare, video, comment, username, profile content, or other material you post through the app. You retain ownership of your content, but by posting it, you grant DarePool a non-exclusive license to host, display, distribute, and promote that content within the app and in connection with the service.
+
+8. Moderation and Enforcement
+We may remove content, restrict visibility, suspend features, limit accounts, or permanently ban users at our discretion if content or conduct violates our rules, legal requirements, safety standards, or platform integrity.
+
+9. Account Responsibility
+You are responsible for maintaining the security of your account and login credentials. You may not impersonate others, manipulate votes, abuse funding systems, or attempt to exploit the platform.
+
+10. No Refunds
+Except where required by law, contributions, funding actions, purchases, boosts, and similar transactions are final and non-refundable.
+
+11. Limitation of Liability
+To the maximum extent permitted by law, DarePool and its operators are not liable for injuries, damages, losses, disputes, user conduct, user-generated content, participation decisions, missed winnings, transferred pools, or any indirect or consequential damages arising from use of the app.
+
+12. Changes to Terms
+We may update these Terms from time to time. Continued use of DarePool after changes take effect means you accept the updated Terms.
+
+13. Contact
+If needed, add a placeholder support/contact section in the app settings or support page.
+
+==================================================
+COMMUNITY GUIDELINES PAGE CONTENT
+==================================================
+
+Title: Community Guidelines
+
+Body:
+
+DarePool is meant to be competitive, creative, and entertaining. To keep the platform safe, all users must follow these rules.
+
+1. No Self-Harm or Dangerous Dares
+Do not post or encourage dares involving self-harm, serious injury, choking, overdose, starvation, cutting, reckless stunts, or other dangerous conduct.
+
+2. No Illegal Activity
+Do not post or promote dares involving theft, vandalism, trespassing, fraud, drugs, weapons misuse, or any other illegal behavior.
+
+3. No Harassment or Bullying
+Do not target, threaten, humiliate, harass, bully, or abuse other users.
+
+4. No Hate Speech or Slurs
+Racism, hate speech, slurs, dehumanizing language, or attacks on protected groups are not allowed.
+
+5. No Sexual or Exploitative Content
+Do not post sexual content, exploitative content, or anything involving minors in unsafe or inappropriate ways.
+
+6. Keep It Competitive, Not Harmful
+Creativity is encouraged. Harm, abuse, intimidation, and dangerous behavior are not.
+
+7. Respect Moderation
+Content may be blocked, flagged, removed, or reviewed. Repeated violations may result in account restrictions or permanent bans.
+
+8. Comments Must Stay Within the Rules
+Mild profanity in non-abusive contexts may be allowed, but bullying, targeted insults, hate speech, threats, and excessive abusive language are not allowed.
+
+9. No Manipulation
+Do not attempt to rig votes, spam the platform, abuse boosts, create fake engagement, or exploit the app.
+
+10. Enforcement
+Violations may lead to content removal, loss of features, pool disqualification, suspension, or permanent account bans.
+
+==================================================
+PRIVACY POLICY PAGE CONTENT
+==================================================
+
+Title: Privacy Policy
+
+Body:
+
+DarePool collects and uses certain information to operate the app, process transactions, protect users, and improve the service.
+
+1. Information We Collect
+We may collect information such as:
+- username
+- email address
+- profile information
+- uploaded content
+- comments
+- wallet and transaction records
+- device/session information
+- legal/policy acceptance records
+
+2. Payments
+Payment and payout processing may be handled by third-party payment providers. DarePool does not store raw payment card or bank account details.
+
+3. How We Use Information
+We may use information to:
+- create and manage accounts
+- process funding, payouts, and withdrawals
+- moderate content
+- prevent fraud and abuse
+- send important account or transaction notifications
+- improve the app
+
+4. Sharing
+We may share limited information with service providers that help operate the app, such as payment processors, hosting providers, analytics tools, moderation tools, and customer support systems.
+
+5. Retention
+We may retain account, content, moderation, and transaction data as needed for security, legal, fraud-prevention, and operational purposes.
+
+6. Security
+We take reasonable measures to protect user data, but no system can be guaranteed perfectly secure.
+
+7. Your Choices
+Users may be able to manage account details, privacy settings, notification preferences, and account deletion options within the app.
+
+8. Policy Updates
+This Privacy Policy may be updated from time to time. Continued use of the app after changes take effect means you accept the updated version.
+
+==================================================
+SAFETY AND RISK DISCLAIMER PAGE CONTENT
+==================================================
+
+Title: Safety and Risk Disclaimer
+
+Body:
+
+DarePool is a user-generated platform. Users are fully responsible for their own actions.
+
+1. Voluntary Participation
+You are never required to participate in any dare. Any action you take is completely voluntary and at your own risk.
+
+2. Personal Responsibility
+You are solely responsible for your decisions, actions, safety, surroundings, and consequences related to participation in any dare or submission.
+
+3. No Endorsement of Harm
+DarePool does not endorse dangerous, illegal, reckless, abusive, or harmful behavior.
+
+4. Moderation Is Not a Guarantee
+Although DarePool may moderate, filter, flag, or remove content, no moderation system is perfect. Users must use their own judgment and common sense at all times.
+
+5. Assumption of Risk
+By using DarePool, you acknowledge that you may encounter user-generated content that is offensive, irresponsible, or inappropriate, and you agree that DarePool is not responsible for your decision to engage with any activity.
+
+==================================================
+PART 3: SETTINGS ICON IN PROFILE
+==================================================
+
+In the Profile tab, add a settings icon at the top right of the profile screen.
+
+REQUIREMENTS:
+- The icon should be clearly visible and polished
+- Tapping it opens the app Settings screen
+- Keep it consistent with modern social apps
+- Keep profile page intact and do not remove current profile content
+
+==================================================
+PART 4: SETTINGS MENU STRUCTURE
+==================================================
+
+Build a real, functional Settings screen for the app.
+
+The settings menu should feel like a real social app and include sections similar to what users expect from apps like Instagram, TikTok, and Snapchat, adapted for DarePool.
+
+SETTINGS SECTIONS TO ADD:
+
+A. ACCOUNT
+Include:
+- Account Information
+- Email address
+- Username
+- Display name if supported
+- Phone number placeholder/support if not yet enabled
+- Date joined
+- Change password
+- Change username (respect current 30-day cooldown)
+- Linked payout account / withdrawal setup status
+- Delete account
+- Log out
+
+B. PRIVACY
+Include:
+- Private account toggle
+- Who can comment on:
+  - my dares
+  - my submissions
+- Who can message me (if messaging exists or create a clear placeholder)
+- Who can mention/tag me if supported
+- Activity visibility toggle if relevant
+- Profile visibility options
+- Hide wallet earnings from profile if profile currently exposes earnings publicly
+- Allow others to boost my dares toggle if needed
+- Blocked users list
+
+C. SECURITY
+Include:
+- Change password
+- Password last changed date if possible
+- Two-factor authentication placeholder or functional scaffold
+- Active sessions / logged-in devices if available
+- Login alerts placeholder or scaffold
+- Security status / account safety section
+- Email verified status
+- Payout identity verification status if relevant to wallet system
+
+D. NOTIFICATIONS
+Add functional notification preferences for:
+- Dare funded
+- New submission on my dare
+- New comment on my dare
+- New comment on my submission
+- Boost purchased on my dare
+- Dare won
+- Pool transferred
+- Wallet deposit success
+- Withdrawal updates
+- Account/security alerts
+
+Requirements:
+- Store notification preferences persistently
+- Use clean toggle UI
+- Wire settings into current notification system if one exists
+- If notifications are not fully implemented, create the database structure and UI toggles now and wire up the settings for future use
+
+E. PAYMENTS / WALLET
+Include:
+- Available balance
+- Withdrawable balance
+- Pending balance
+- Payment / payout account status
+- Add funds shortcut
+- Withdraw shortcut
+- Transaction history shortcut
+- Tax/payment info placeholder if needed
+- Withdrawal setup / manage payout method
+- Clear simple copy for payout status
+
+F. CONTENT & APP PREFERENCES
+Include:
+- Dark mode / theme setting if theme system exists
+- Language placeholder
+- Autoplay videos toggle if applicable
+- Data saver toggle for video feed
+- Mute videos by default toggle if applicable
+- Clear cache / free up space placeholder or functional app cache clear if feasible
+- Sensitive content / mature content visibility setting if relevant to the app
+
+G. SUPPORT & SAFETY
+Include:
+- Report a problem
+- Help / FAQ
+- Community Guidelines
+- Terms of Service
+- Privacy Policy
+- Safety and Risk Disclaimer
+- Contact support placeholder
+- Report abuse
+- Account status / strikes / moderation status page
+- Appeal or support request placeholder if moderation system supports it
+
+H. ABOUT
+Include:
+- App version
+- Legal pages
+- Open-source/licenses placeholder if needed
+- Copyright/app info
+- Sign out
+
+==================================================
+PART 5: ACCOUNT INFORMATION PAGE
+==================================================
+
+Create a dedicated Account Information page inside settings.
+
+Show:
+- email
+- username
+- display name if supported
+- profile photo
+- joined date
+- account ID if useful internally
+- payout account status
+- verification/email status if supported
+
+REQUIREMENTS:
+- This page must be functional and read from real user data
+- Let user edit fields where appropriate:
+  - email
+  - profile photo
+  - bio
+  - display name if supported
+- Keep username editing subject to existing 30-day cooldown
+- Show clear cooldown date if username cannot be changed yet
+
+==================================================
+PART 6: CHANGE PASSWORD FLOW
+==================================================
+
+Add a functional change password flow.
+
+REQUIREMENTS:
+- User enters current password
+- User enters new password
+- User confirms new password
+- Validate server-side
+- Hash new password securely
+- Show success/error states
+- Do not expose sensitive errors
+
+==================================================
+PART 7: DELETE ACCOUNT FLOW
+==================================================
+
+Add a real delete account flow with safeguards.
+
+REQUIREMENTS:
+- Place under Settings > Account
+- Ask for password confirmation before deletion
+- Show a warning explaining what happens
+- If hard delete is too risky, implement a safe soft-delete/deactivation structure
+- Prevent immediate accidental deletion by using a confirmation screen
+- Handle existing user data safely:
+  - profile
+  - dares
+  - submissions
+  - comments
+  - wallet records
+  - payouts
+- Keep financial/legal history retained where needed for integrity if using soft delete
+- Show clean user-facing messaging
+
+==================================================
+PART 8: BLOCKED USERS / PRIVACY CONTROLS
+==================================================
+
+Add a blocked users management page.
+
+REQUIREMENTS:
+- Show list of blocked users
+- Allow unblock
+- Persist block relationships
+- Apply blocks to comments/interactions where relevant if feasible
+- Keep this structured even if all effects are not yet implemented
+
+==================================================
+PART 9: NOTIFICATION PREFERENCES
+==================================================
+
+Create a dedicated Notification Settings page.
+
+REQUIREMENTS:
+- Use grouped toggles
+- Store preferences in database
+- Make it functional
+- If there is existing notification logic, integrate with it
+- If not, create:
+  - data model
+  - settings UI
+  - helper layer so future notifications respect preferences
+
+Suggested notification preference fields:
+- notifyDareFunded
+- notifyNewSubmission
+- notifyNewDareComment
+- notifyNewSubmissionComment
+- notifyBoostOnMyDare
+- notifyDareWon
+- notifyPoolTransferred
+- notifyWalletDeposit
+- notifyWithdrawalStatus
+- notifySecurityAlerts
+- notifyMarketing optional
+
+==================================================
+PART 10: REPORT A PROBLEM / SUPPORT
+==================================================
+
+Add a functional "Report a Problem" page in settings.
+
+REQUIREMENTS:
+- User can choose category:
+  - App bug
+  - Payment issue
+  - Withdrawal issue
+  - Harassment / abuse
+  - Content moderation issue
+  - Account issue
+  - Other
+- User can enter details
+- Persist support tickets/reports in database
+- Show success state after submission
+- If admin tools exist, make support tickets visible there
+
+Suggested model:
+SUPPORT_TICKETS:
+- id
+- userId
+- category
+- subject
+- details
+- status
+- createdAt
+- updatedAt
+
+==================================================
+PART 11: SECURITY / SESSIONS
+==================================================
+
+If feasible with the current auth system, add a simple session/security page.
+
+REQUIREMENTS:
+- Show current device/session
+- Show recent login time if possible
+- Allow “Log out of all sessions” if feasible
+- If full multi-session tracking is not implemented yet, create a clean scaffold with TODO comments and a minimal working version
+
+==================================================
+PART 12: DATA MODELS / DATABASE
+==================================================
+
+Extend models/tables as needed for settings functionality.
+
+Suggested additions:
+
+USERS:
+- email
+- username
+- displayName
+- bio
+- avatarUrl
+- joinedAt
+- emailVerified
+- lastUsernameChangeAt
+- termsAcceptedAt
+- guidelinesAcceptedAt
+- privacyAcceptedAt
+- riskAcceptedAt
+- acceptedPolicyVersion
+- privateAccount
+- commentPrivacyDares
+- commentPrivacySubmissions
+- messagePrivacy
+- profileVisibility
+- hideEarnings
+- allowBoosts
+- dataSaverEnabled
+- autoplayEnabled
+- mutedByDefault
+- language
+- theme
+
+NOTIFICATION_PREFERENCES:
+- id
+- userId
+- notifyDareFunded
+- notifyNewSubmission
+- notifyNewDareComment
+- notifyNewSubmissionComment
+- notifyBoostOnMyDare
+- notifyDareWon
+- notifyPoolTransferred
+- notifyWalletDeposit
+- notifyWithdrawalStatus
+- notifySecurityAlerts
+- notifyMarketing
+- createdAt
+- updatedAt
+
+BLOCKED_USERS:
+- id
+- userId
+- blockedUserId
+- createdAt
+
+SUPPORT_TICKETS:
+- id
+- userId
+- category
+- subject
+- details
+- status
+- createdAt
+- updatedAt
+
+USER_SESSIONS if feasible:
+- id
+- userId
+- deviceLabel
+- ipAddressHash or safe identifier
+- createdAt
+- lastSeenAt
+- isCurrent
+- isRevoked
+
+==================================================
+PART 13: SETTINGS UI / UX
+==================================================
+
+DESIGN REQUIREMENTS:
+- Match current dark premium app style
+- Make settings feel like Instagram/TikTok/Snapchat-inspired organization, but branded for DarePool
+- Use grouped list rows/cards with icons
+- Each row should feel tappable and clean
+- Keep top-level Settings page easy to scan
+- Show account email and username near the top
+- Show app version near the bottom
+- Keep the profile settings icon polished and minimal
+
+==================================================
+PART 14: FINAL REQUIREMENTS
+==================================================
+
+When finished:
+- make sure the app still runs in Replit
+- explain what files were changed
+- explain how signup agreement is enforced
+- explain how policy acceptance is stored
+- explain how the settings icon is wired from the profile page
+- explain what settings pages are fully functional
+- explain what settings pages are scaffolded for future use
+- explain any new database fields/tables
+- do not rebuild the app from scratch
+- preserve current style and existing features while adding this legal/signup/settings system

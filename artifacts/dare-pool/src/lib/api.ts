@@ -536,3 +536,139 @@ export async function apiSeed() {
     {}
   );
 }
+
+// ─── Legal / Terms ───────────────────────────────────────────────────────────
+
+export async function apiAcceptTerms(data: {
+  terms: boolean;
+  guidelines: boolean;
+  privacy: boolean;
+  risk: boolean;
+  policyVersion?: string;
+}) {
+  return request<{ ok: boolean }>("POST", "/auth/accept-terms", data);
+}
+
+// ─── Settings ────────────────────────────────────────────────────────────────
+
+export interface ApiSettingsProfile {
+  id: number;
+  username: string;
+  email: string;
+  displayName: string | null;
+  bio: string | null;
+  avatarUrl: string | null;
+  createdAt: string;
+  lastUsernameChangeAt: string | null;
+  emailVerified: boolean;
+  termsAcceptedAt: string | null;
+  guidelinesAcceptedAt: string | null;
+  privacyAcceptedAt: string | null;
+  riskAcceptedAt: string | null;
+  acceptedPolicyVersion: string | null;
+  totalPrizeEarnings: number;
+}
+
+export interface ApiPrivacySettings {
+  privateAccount: boolean;
+  commentPrivacyDares: string;
+  commentPrivacySubmissions: string;
+  messagePrivacy: string;
+  hideEarnings: boolean;
+  allowBoosts: boolean;
+}
+
+export interface ApiContentSettings {
+  dataSaverEnabled: boolean;
+  autoplayEnabled: boolean;
+  mutedByDefault: boolean;
+  language: string;
+  theme: string;
+}
+
+export interface ApiNotificationPreferences {
+  id: number;
+  userId: number;
+  notifyDareFunded: boolean;
+  notifyNewSubmission: boolean;
+  notifyNewDareComment: boolean;
+  notifyNewSubmissionComment: boolean;
+  notifyBoostOnMyDare: boolean;
+  notifyDareWon: boolean;
+  notifyPoolTransferred: boolean;
+  notifyWalletDeposit: boolean;
+  notifyWithdrawalStatus: boolean;
+  notifySecurityAlerts: boolean;
+  notifyMarketing: boolean;
+}
+
+export interface ApiBlockedUser {
+  id: number;
+  blockedUserId: number;
+  blockedUsername: string | null;
+  createdAt: string;
+}
+
+export async function apiGetSettingsProfile() {
+  return request<{ profile: ApiSettingsProfile }>("GET", "/settings/profile");
+}
+
+export async function apiUpdateSettingsProfile(data: Partial<{
+  displayName: string;
+  bio: string;
+  avatarUrl: string;
+  email: string;
+}>) {
+  return request<{ ok: boolean }>("PUT", "/settings/profile", data);
+}
+
+export async function apiGetPrivacySettings() {
+  return request<{ privacy: ApiPrivacySettings }>("GET", "/settings/privacy");
+}
+
+export async function apiUpdatePrivacySettings(data: Partial<ApiPrivacySettings>) {
+  return request<{ ok: boolean }>("PUT", "/settings/privacy", data);
+}
+
+export async function apiGetContentSettings() {
+  return request<{ content: ApiContentSettings }>("GET", "/settings/content");
+}
+
+export async function apiUpdateContentSettings(data: Partial<ApiContentSettings>) {
+  return request<{ ok: boolean }>("PUT", "/settings/content", data);
+}
+
+export async function apiGetNotificationPreferences() {
+  return request<{ notifications: ApiNotificationPreferences }>("GET", "/settings/notifications");
+}
+
+export async function apiUpdateNotificationPreferences(data: Partial<ApiNotificationPreferences>) {
+  return request<{ ok: boolean }>("PUT", "/settings/notifications", data);
+}
+
+export async function apiGetBlockedUsers() {
+  return request<{ blocked: ApiBlockedUser[] }>("GET", "/settings/blocked-users");
+}
+
+export async function apiUnblockUser(blockId: number) {
+  return request<{ ok: boolean }>("DELETE", `/settings/blocked-users/${blockId}`);
+}
+
+export async function apiSubmitSupportTicket(data: {
+  category: string;
+  subject: string;
+  details: string;
+}) {
+  return request<{ ok: boolean; ticketId: number }>("POST", "/settings/support-ticket", data);
+}
+
+export async function apiChangePassword(data: {
+  currentPassword: string;
+  newPassword: string;
+}) {
+  return request<{ ok: boolean }>("POST", "/settings/change-password", data);
+}
+
+export async function apiDeleteAccount(password: string) {
+  return request<{ ok: boolean }>("POST", "/settings/delete-account", { password });
+}

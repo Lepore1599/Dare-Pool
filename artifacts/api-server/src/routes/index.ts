@@ -17,6 +17,7 @@ import fundingRouter from "./funding";
 import notificationsRouter from "./notifications";
 import boostsRouter from "./boosts";
 import storeRouter from "./store";
+import settingsRouter from "./settings";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -39,6 +40,7 @@ router.use("/dares/:dareId/fund", fundingRouter);
 router.use("/notifications", notificationsRouter);
 router.use("/boosts", boostsRouter);
 router.use("/store", storeRouter);
+router.use("/settings", settingsRouter);
 
 // Serve uploaded files
 import express from "express";

@@ -48,8 +48,22 @@ pnpm workspace monorepo using TypeScript. DarePool — a full-stack mobile-first
 - `/wallet` — Balance, Stripe deposit/withdraw
 - `/notifications` — Dare completion and pool transfer notifications with read/unread state
 - `/leaderboard` — Past dares, hall of fame, total votes
-- `/profile/:id` — User profile with stats and activity
+- `/profile/:id` — User profile with stats and activity + gear icon → Settings when viewing own profile
 - `/admin` — Admin dashboard (requires `isAdmin=true`)
+- `/settings` — Settings hub (Instagram/TikTok-style grouped sections)
+- `/settings/account` — Account Information: email, display name, bio, joined date, legal acceptance status, delete account
+- `/settings/security` — Change password flow (server-side validated + bcrypt hashed)
+- `/settings/privacy` — Privacy controls: private account, comment privacy, hide earnings, allow boosts
+- `/settings/notifications` — Notification toggles for all event types, persisted to DB
+- `/settings/payments` — Wallet balance snapshot + shortcuts to wallet/withdraw
+- `/settings/content` — Video autoplay/mute/data saver, language, theme prefs
+- `/settings/support` — Report a Problem (support tickets to DB) + FAQ accordion + legal links
+- `/settings/about` — App version, legal links, logout
+- `/settings/blocked` — Blocked users list with unblock action
+- `/legal/terms` — Full Terms of Service (exact provided text)
+- `/legal/guidelines` — Full Community Guidelines (exact provided text)
+- `/legal/privacy` — Full Privacy Policy (exact provided text)
+- `/legal/safety` — Full Safety & Risk Disclaimer (exact provided text)
 
 ## Feed Scoring (client-side, `Home.tsx`)
 

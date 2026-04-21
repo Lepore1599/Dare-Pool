@@ -96,6 +96,11 @@ router.get("/me", requireAuth, async (req, res) => {
       totalEntries: usersTable.totalEntries,
       totalVotesCast: usersTable.totalVotesCast,
       createdAt: usersTable.createdAt,
+      termsAcceptedAt: usersTable.termsAcceptedAt,
+      guidelinesAcceptedAt: usersTable.guidelinesAcceptedAt,
+      privacyAcceptedAt: usersTable.privacyAcceptedAt,
+      riskAcceptedAt: usersTable.riskAcceptedAt,
+      acceptedPolicyVersion: usersTable.acceptedPolicyVersion,
     })
     .from(usersTable)
     .where(eq(usersTable.id, req.user!.userId))
@@ -107,6 +112,33 @@ router.get("/me", requireAuth, async (req, res) => {
   }
 
   res.json({ user });
+});
+
+// POST /api/auth/accept-terms
+router.post("/accept-terms", requireAuth, async (req, res) => {
+  const { terms, guidelines, privacy, risk, policyVersion } = req.body as {
+    terms?: boolean;
+    guidelines?: boolean;
+    privacy?: boolean;
+    risk?: boolean;
+    policyVersion?: string;
+  };
+
+  if (!terms || !guidelines || !privacy || !risk) {
+    res.status(400).json({ error: "All agreements must be accepted." });
+    return;
+  }
+
+  const now = new Date();
+  await db.update(usersTable).set({
+    termsAcceptedAt: now,
+    guidelinesAcceptedAt: now,
+    privacyAcceptedAt: now,
+    riskAcceptedAt: now,
+    acceptedPolicyVersion: policyVersion ?? "1.0",
+  }).where(eq(usersTable.id, req.user!.userId));
+
+  res.json({ ok: true });
 });
 
 export default router;

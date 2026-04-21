@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useLocation, Link } from "wouter";
 import {
   ArrowLeft, Crown, Flame, Trophy, Users, Calendar, Pencil, X, Check,
-  MessageCircle, Zap, Star, TrendingUp, Clock, ShieldAlert, Camera,
+  MessageCircle, Zap, Star, TrendingUp, Clock, ShieldAlert, Camera, Settings,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -242,12 +242,24 @@ export function Profile({ id }: ProfileProps) {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">
-      <button
-        onClick={() => window.history.back()}
-        className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors mb-5 text-sm"
-      >
-        <ArrowLeft className="w-4 h-4" /> Back
-      </button>
+      <div className="flex items-center justify-between mb-5">
+        <button
+          onClick={() => window.history.back()}
+          className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors text-sm"
+        >
+          <ArrowLeft className="w-4 h-4" /> Back
+        </button>
+        {isSelf && !editing && (
+          <button
+            onClick={() => setLocation("/settings")}
+            className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-xl hover:bg-white/5"
+            title="Settings"
+            data-testid="btn-settings"
+          >
+            <Settings className="w-5 h-5" />
+          </button>
+        )}
+      </div>
 
       {/* ── Profile Header ─────────────────────────────────────────────────── */}
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}

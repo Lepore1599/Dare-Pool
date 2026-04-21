@@ -17,6 +17,20 @@ import { Reels } from "@/pages/Reels";
 import { Wallet } from "@/pages/Wallet";
 import { Notifications } from "@/pages/Notifications";
 import { Store } from "@/pages/Store";
+import { Settings } from "@/pages/Settings";
+import { AccountInfo } from "@/pages/settings/AccountInfo";
+import { SecuritySettings } from "@/pages/settings/SecuritySettings";
+import { PrivacySettings } from "@/pages/settings/PrivacySettings";
+import { NotificationSettings } from "@/pages/settings/NotificationSettings";
+import { PaymentSettings } from "@/pages/settings/PaymentSettings";
+import { ContentSettings } from "@/pages/settings/ContentSettings";
+import { SupportPage } from "@/pages/settings/SupportPage";
+import { AboutSettings } from "@/pages/settings/AboutSettings";
+import { BlockedUsers } from "@/pages/settings/BlockedUsers";
+import { TermsOfService } from "@/pages/legal/TermsOfService";
+import { CommunityGuidelines } from "@/pages/legal/CommunityGuidelines";
+import { PrivacyPolicy } from "@/pages/legal/PrivacyPolicy";
+import { SafetyDisclaimer } from "@/pages/legal/SafetyDisclaimer";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
@@ -25,7 +39,6 @@ function AppRoutes() {
   const [loginOpen, setLoginOpen] = useState(false);
 
   return (
-    // Extra bottom padding so content isn't hidden behind the bottom nav
     <div className="min-h-screen bg-background pb-16">
       <Navbar onLoginClick={() => setLoginOpen(true)} />
       <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} />
@@ -44,6 +57,25 @@ function AppRoutes() {
         <Route path="/admin" component={AdminDashboard} />
         <Route path="/notifications" component={Notifications} />
         <Route path="/store" component={Store} />
+
+        {/* Settings */}
+        <Route path="/settings" component={Settings} />
+        <Route path="/settings/account" component={AccountInfo} />
+        <Route path="/settings/security" component={SecuritySettings} />
+        <Route path="/settings/privacy" component={PrivacySettings} />
+        <Route path="/settings/notifications" component={NotificationSettings} />
+        <Route path="/settings/payments" component={PaymentSettings} />
+        <Route path="/settings/content" component={ContentSettings} />
+        <Route path="/settings/support" component={SupportPage} />
+        <Route path="/settings/about" component={AboutSettings} />
+        <Route path="/settings/blocked" component={BlockedUsers} />
+
+        {/* Legal pages */}
+        <Route path="/legal/terms" component={TermsOfService} />
+        <Route path="/legal/guidelines" component={CommunityGuidelines} />
+        <Route path="/legal/privacy" component={PrivacyPolicy} />
+        <Route path="/legal/safety" component={SafetyDisclaimer} />
+
         <Route component={NotFound} />
       </Switch>
       <BottomNav onLoginClick={() => setLoginOpen(true)} />

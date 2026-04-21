@@ -329,6 +329,90 @@ export const apiAdminDismissReport = (id: number) =>
 export const apiAdminActionReport = (id: number, notes?: string) =>
   request("POST", `/admin/reports/${id}/action`, { notes });
 
+// ─── Wallet ───────────────────────────────────────────────────────────────────
+
+export interface ApiWallet {
+  id: number;
+  userId: number;
+  availableBalance: number;
+  pendingBalance: number;
+  withdrawableBalance: number;
+  lifetimeDeposited: number;
+  lifetimeWithdrawn: number;
+  lifetimeWon: number;
+  stripeCustomerId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ApiWalletTransaction {
+  id: number;
+  userId: number;
+  type: string;
+  status: string;
+  amount: number;
+  currency: string;
+  processor: string;
+  processorReferenceId: string | null;
+  relatedDareId: number | null;
+  relatedEntryId: number | null;
+  description: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ApiPayoutAccount {
+  id: number;
+  userId: number;
+  provider: string;
+  providerAccountId: string;
+  onboardingComplete: number;
+  payoutsEnabled: number;
+  chargesEnabled: number;
+}
+
+export async function apiGetWallet() {
+  return request<{ wallet: ApiWallet; transactions: ApiWalletTransaction[]; payoutAccount: ApiPayoutAccount | null }>(
+    "GET", "/wallet"
+  );
+}
+
+export async function apiDepositFunds(amount: number) {
+  return request<{ url: string; sessionId: string }>("POST", "/wallet/deposit", { amount });
+}
+
+export async function apiWithdrawFunds(amount: number) {
+  return request<{ ok: boolean }>("POST", "/wallet/withdraw", { amount });
+}
+
+export async function apiStartOnboarding() {
+  return request<{ url: string }>("POST", "/wallet/onboard", {});
+}
+
+// ─── Reels ────────────────────────────────────────────────────────────────────
+
+export interface ApiReel {
+  id: number;
+  dareId: number;
+  userId: number;
+  username: string | null;
+  avatarUrl: string | null;
+  videoUrl: string;
+  videoType: string;
+  status: string;
+  voteCount: number;
+  createdAt: string;
+  dareTitle: string | null;
+  dareStatus: string | null;
+  darePrize: number;
+}
+
+export async function apiGetReels(limit = 30, offset = 0) {
+  return request<{ reels: ApiReel[]; limit: number; offset: number }>(
+    "GET", `/reels?limit=${limit}&offset=${offset}`
+  );
+}
+
 // ─── Seed ────────────────────────────────────────────────────────────────────
 
 export async function apiSeed() {

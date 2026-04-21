@@ -11,6 +11,8 @@ import usersRouter from "./users";
 import adminRouter from "./admin";
 import seedRouter from "./seed";
 import { entryCommentsRouter, dareCommentsRouter } from "./comments";
+import walletRouter from "./wallet";
+import reelsRouter from "./reels";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -27,6 +29,8 @@ router.use("/users", usersRouter);
 router.use("/admin", adminRouter);
 router.use("/seed", seedRouter);
 router.use("/entries/:entryId/comments", entryCommentsRouter);
+router.use("/wallet", walletRouter);
+router.use("/reels", reelsRouter);
 
 // Serve uploaded files
 import express from "express";

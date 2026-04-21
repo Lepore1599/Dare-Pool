@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { Flame, Shield, Bell } from "lucide-react";
+import { Flame, Shield, Bell, Sparkles } from "lucide-react";
 import { useUser } from "@/context/UserContext";
 import { apiGetNotifications } from "@/lib/api";
 
@@ -44,6 +44,17 @@ export function Navbar({ onLoginClick: _ }: NavbarProps) {
 
         {/* Right side */}
         <div className="flex items-center gap-1">
+          {/* Store button — always visible */}
+          <Link href="/store">
+            <button
+              className="relative flex items-center justify-center w-9 h-9 rounded-lg text-muted-foreground hover:text-amber-400 hover:bg-amber-400/10 transition-colors"
+              title="Store"
+              data-testid="nav-store"
+            >
+              <Sparkles className="w-4.5 h-4.5" />
+            </button>
+          </Link>
+
           {user && (
             <Link href="/notifications">
               <button

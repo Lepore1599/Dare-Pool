@@ -15,6 +15,8 @@ import walletRouter from "./wallet";
 import reelsRouter from "./reels";
 import fundingRouter from "./funding";
 import notificationsRouter from "./notifications";
+import boostsRouter from "./boosts";
+import storeRouter from "./store";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -35,6 +37,8 @@ router.use("/wallet", walletRouter);
 router.use("/reels", reelsRouter);
 router.use("/dares/:dareId/fund", fundingRouter);
 router.use("/notifications", notificationsRouter);
+router.use("/boosts", boostsRouter);
+router.use("/store", storeRouter);
 
 // Serve uploaded files
 import express from "express";

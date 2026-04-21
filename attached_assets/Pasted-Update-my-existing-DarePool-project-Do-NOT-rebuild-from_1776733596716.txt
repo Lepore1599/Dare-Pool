@@ -1,0 +1,241 @@
+Update my existing DarePool project. Do NOT rebuild from scratch. Keep my current UI style, dark mode design, bottom tab navigation, profiles, moderation, reports, comments, reels, wallet, and overall layout. Add a new home feed filter system plus a top-right in-app purchases button and purchase screen.
+
+GOAL:
+Make the Home page feel like a real social app feed with Hot / Trending / Recent tabs, always show boosted dares at the top of the feed, and add a top-of-screen button for in-app purchases like profile badges and boost purchases.
+
+IMPORTANT:
+- Reuse my existing components, routes, styling, database, and backend where possible
+- Do not remove or break current dare flow, payouts, wallet, comments, moderation, profiles, reels, or reports
+- Keep the app mobile-first and polished
+- Do not rebuild the app from scratch
+- Keep all feed ranking logic clean and easy to tweak later
+- Keep the top bar minimal and premium-looking
+
+FEATURES TO ADD:
+
+1. HOME PAGE FILTER TABS
+On the Home page, add feed filter tabs near the top of the screen:
+
+- Hot
+- Trending
+- Recent
+
+Requirements:
+- These should act like mobile social app tabs
+- Switching tabs should feel instant and app-like
+- Keep styling dark, modern, and premium
+- Show a clear active tab state
+- Tabs should filter the dare feed below them
+- Keep the current home page content, but reorganize it to fit this tabbed feed structure
+
+2. BOOSTED DARES AT TOP OF FEED
+Boosted dares must always appear at the top of the Home feed, above the normal filtered dare list.
+
+Requirements:
+- Show boosted dares in a dedicated top section above the Hot / Trending / Recent results
+- Label each boosted dare clearly with:
+  - “Boosted”
+  - and “Boosted by @username” if the boost purchaser should be shown
+- Keep boosted dares visually distinct but consistent with current design
+- If multiple boosted dares exist:
+  - do NOT dump an unlimited number at the top
+  - show a max of 1 to 3 at a time
+  - rotate or sort them cleanly by active boost priority
+- Boosted dares should remain visible at the top regardless of whether the user is on Hot, Trending, or Recent
+- Boosted status should not change the dare’s real pool, votes, or payout
+- Boosting is visibility only, not pay-to-win
+
+3. HOT TAB LOGIC
+Define Hot as dares whose pools are rapidly growing right now.
+
+Requirements:
+- Rank Hot dares by recent pool momentum, not total pool size alone
+- Build a feed score that emphasizes recent funding velocity
+- Suggested factors:
+  - amount of funding added in the last rolling time window
+  - number of unique recent funders
+  - recent submission activity can lightly help, but Hot should mainly reflect fast-growing pool interest
+- Keep the scoring function in one reusable backend/frontend helper so it is easy to adjust later
+- Add optional small UI indicators like:
+  - “+$32 recently”
+  - or “Hot”
+
+4. TRENDING TAB LOGIC
+Define Trending as dares getting the most overall attention and consistency.
+
+Requirements:
+- Rank Trending dares by an engagement score, not just raw dollars
+- Suggested factors:
+  - current pool amount
+  - number of submissions
+  - number of votes
+  - number of comments
+  - number of unique funders
+  - consistency of activity over time
+- Trending should feel like the main stage / most active dares overall
+- Keep the scoring logic reusable and easy to tweak later
+- Add optional “Trending” labels on qualifying cards
+
+5. RECENT TAB LOGIC
+Define Recent as newest dares first.
+
+Requirements:
+- Sort by dare createdAt descending
+- Keep this straightforward and fast
+- This tab should help new dares get visibility
+
+6. DARE CARD LABELS
+Update dare cards to show useful dynamic labels when relevant, such as:
+- Hot
+- Trending
+- New
+- Ending Soon
+- Boosted
+
+Requirements:
+- Keep labels subtle and stylish
+- “Ending Soon” should appear if a dare has little time remaining
+- Do not clutter the cards
+
+7. TOP BAR IN-APP PURCHASES BUTTON
+Add a button at the top of the screen for in-app purchases.
+
+Requirements:
+- Keep the top bar minimal
+- Add a top-right button or icon for in-app purchases/store
+- This button should be visible from the Home screen and ideally across the main app shell
+- Keep it polished and obvious but not oversized
+- Suggested icon options:
+  - sparkles
+  - lightning
+  - gem
+  - store bag
+- Route this button to a dedicated purchases/store page
+
+8. IN-APP PURCHASES / STORE PAGE
+Create a store page for app-level purchases.
+
+The store should include at minimum:
+
+A) PROFILE BADGES
+Examples:
+- Bronze Badge
+- Silver Badge
+- Gold Badge
+- Premium/Animated Badge
+
+Requirements:
+- Let users purchase and equip profile badges
+- Purchased badges should show on user profiles
+- Keep badge system compatible with existing profile page
+
+B) BOOST PURCHASES
+Add boost purchase options exactly like this:
+- $1.99 boost for 2 hours
+- $4.99 boost for 10 hours
+- $9.99 boost for 24 hours
+
+Requirements:
+- A boost can be applied to any dare, not just the user’s own dare
+- A boosted dare is prioritized to the top boosted section of the feed
+- The dare should show “Boosted by @username” unless anonymous boosts are later added
+- Boosting should affect visibility only
+- Boosting should NOT:
+  - add money to the dare pool
+  - add votes
+  - affect payout percentages
+  - alter dare winner logic directly
+
+9. BOOST DATA MODEL / LOGIC
+Add or extend persistent support for boosts.
+
+Suggested model:
+BOOSTS:
+- id
+- dareId
+- purchasedByUserId
+- boostTier
+- amountPaid
+- startsAt
+- endsAt
+- status (active, expired, canceled)
+- createdAt
+
+Requirements:
+- A dare can have multiple boosts over time
+- Feed should only consider active boosts
+- Keep active boost ordering clean, such as:
+  - highest current tier
+  - newest boost
+  - longest time remaining
+- Make the ordering logic reusable and easy to change later
+- Expired boosts should stop affecting placement automatically
+
+10. STORE / PURCHASE UX
+Requirements:
+- Store page should be mobile-first
+- Keep it dark, premium, and polished
+- Show clear purchase cards for:
+  - badges
+  - boosts
+- For boosts:
+  - user should be able to choose a dare to boost
+  - show available boost tiers
+  - confirm purchase before applying
+- For badges:
+  - show preview
+  - allow equip after purchase
+- Add helpful success/error states and confirmations
+
+11. PAYMENT / PURCHASE PLACEHOLDER OR INTEGRATION
+If a real purchase system is not already connected, structure the purchase system cleanly so it can be wired up later.
+
+Requirements:
+- Separate store item definitions cleanly
+- Separate purchase creation logic cleanly
+- Separate purchase fulfillment logic cleanly
+- If real payment handling already exists in the project, integrate with it safely
+- Otherwise create a clean purchase flow scaffold with clear TODO comments for real transaction hookup
+- Do not fake completed purchases silently without clear structure
+- Keep the code ready for real purchase fulfillment later
+
+12. ROUTING / NAVIGATION
+Requirements:
+- Add a route/page for the store / in-app purchases screen
+- Keep bottom tabs unchanged:
+  - Home
+  - Reels
+  - Wallet
+  - Profile
+- The store should be accessed from the top-right button, not as a bottom tab
+- Keep active route behavior clean and mobile-friendly
+
+13. PERFORMANCE / DATA HANDLING
+Requirements:
+- Feed sorting should be efficient
+- Avoid duplicating dare data unnecessarily
+- If needed, add backend query helpers or derived scoring utilities
+- Keep score calculations centralized and easy to edit later
+- Avoid making the app laggy on feed load
+
+14. ADMIN / DEBUG SUPPORT
+If useful, add lightweight admin/dev visibility for feed scoring and boosts.
+
+Requirements:
+- Admin can inspect active boosts if admin tools already exist
+- Make it possible to see which dares are being treated as Hot/Trending for debugging if needed
+- Do not expose internal scoring details to normal users unless styled as user-facing labels only
+
+15. FINAL REQUIREMENTS
+When finished:
+- make sure the app still runs in Replit
+- explain what files were changed
+- explain how boosted dares are prioritized
+- explain how Hot scoring works
+- explain how Trending scoring works
+- explain how Recent sorting works
+- explain how the top-right store button is wired
+- explain how the store page works
+- explain how boosts are stored and expire
+- do not rebuild the app from scratch
+- preserve current style and existing features while adding this feed system and store button

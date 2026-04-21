@@ -8,8 +8,11 @@ import {
   walletsTable,
   walletTransactionsTable,
   poolContributionsTable,
+  votesTable,
+  commentsTable,
+  boostsTable,
 } from "@workspace/db";
-import { eq, desc, asc, and, ne, sql } from "drizzle-orm";
+import { eq, desc, asc, and, ne, sql, gt, isNotNull } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth";
 import { moderate } from "../lib/moderation";
 import { closeExpiredDares } from "../lib/expiration";
@@ -33,7 +36,132 @@ const DARE_SELECT = {
   reportCount: daresTable.reportCount,
 };
 
-// GET /api/dares  — list dares
+// ─── helpers ─────────────────────────────────────────────────────────────────
+
+async function attachScoringData(dares: typeof DARE_SELECT[]) {
+  const now = new Date();
+  const cutoff24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
+  // Run all supplemental queries in parallel
+  const [allEntries, voteCounts, dareCounts, recentFunding, activeBoosts] =
+    await Promise.all([
+      // entry counts
+      db
+        .select({ dareId: entriesTable.dareId, id: entriesTable.id })
+        .from(entriesTable)
+        .where(ne(entriesTable.status, "removed")),
+
+      // vote counts per dare
+      db
+        .select({
+          dareId: votesTable.dareId,
+          count: sql<number>`count(*)::int`,
+        })
+        .from(votesTable)
+        .groupBy(votesTable.dareId),
+
+      // dare-level comment counts (dareId IS NOT NULL, entryId IS NULL)
+      db
+        .select({
+          dareId: commentsTable.dareId,
+          count: sql<number>`count(*)::int`,
+        })
+        .from(commentsTable)
+        .where(
+          and(
+            isNotNull(commentsTable.dareId),
+            ne(commentsTable.status, "removed")
+          )
+        )
+        .groupBy(commentsTable.dareId),
+
+      // recent funding: pool_contributions added in the last 24h
+      db
+        .select({
+          dareId: poolContributionsTable.dareId,
+          recentDollars: sql<number>`sum(amount)::int`,
+          recentFunders: sql<number>`count(distinct user_id)::int`,
+        })
+        .from(poolContributionsTable)
+        .where(gt(poolContributionsTable.createdAt, cutoff24h))
+        .groupBy(poolContributionsTable.dareId),
+
+      // active boosts per dare (highest tier wins if multiple)
+      db
+        .select({
+          dareId: boostsTable.dareId,
+          boostTier: boostsTable.boostTier,
+          endsAt: boostsTable.endsAt,
+          purchasedByUsername: usersTable.username,
+          purchasedByUserId: boostsTable.purchasedByUserId,
+        })
+        .from(boostsTable)
+        .leftJoin(usersTable, eq(boostsTable.purchasedByUserId, usersTable.id))
+        .where(and(eq(boostsTable.status, "active"), gt(boostsTable.endsAt, now)))
+        .orderBy(desc(boostsTable.endsAt)),
+    ]);
+
+  // Build lookup maps
+  const entryCountMap: Record<number, number> = {};
+  for (const e of allEntries) {
+    entryCountMap[e.dareId] = (entryCountMap[e.dareId] ?? 0) + 1;
+  }
+
+  const voteCountMap: Record<number, number> = {};
+  for (const v of voteCounts) {
+    voteCountMap[v.dareId] = v.count;
+  }
+
+  const commentCountMap: Record<number, number> = {};
+  for (const c of dareCounts) {
+    if (c.dareId != null) commentCountMap[c.dareId] = c.count;
+  }
+
+  const recentFundingMap: Record<number, { dollars: number; funders: number }> = {};
+  for (const r of recentFunding) {
+    recentFundingMap[r.dareId] = { dollars: r.recentDollars, funders: r.recentFunders };
+  }
+
+  // For boosts: keep only the first (most recent expiry) per dare
+  const boostMap: Record<number, {
+    boostTier: string;
+    endsAt: Date;
+    boostedByUsername: string | null;
+    boostedByUserId: number;
+  }> = {};
+  for (const b of activeBoosts) {
+    if (!(b.dareId in boostMap)) {
+      boostMap[b.dareId] = {
+        boostTier: b.boostTier,
+        endsAt: b.endsAt,
+        boostedByUsername: b.purchasedByUsername,
+        boostedByUserId: b.purchasedByUserId,
+      };
+    }
+  }
+
+  return (dares as Array<Record<string, unknown>>).map((d) => {
+    const id = d.id as number;
+    const rf = recentFundingMap[id] ?? { dollars: 0, funders: 0 };
+    const entryCount = entryCountMap[id] ?? 0;
+    const voteCount = voteCountMap[id] ?? 0;
+    const commentCount = commentCountMap[id] ?? 0;
+    const boostInfo = boostMap[id] ?? null;
+
+    return {
+      ...d,
+      entryCount,
+      voteCount,
+      commentCount,
+      recentFundingDollars: rf.dollars,
+      recentFunderCount: rf.funders,
+      boostInfo,
+    };
+  });
+}
+
+// ─── GET /api/dares ──────────────────────────────────────────────────────────
+
 router.get("/", async (req, res) => {
   await closeExpiredDares();
 
@@ -52,7 +180,6 @@ router.get("/", async (req, res) => {
     query = query.where(ne(daresTable.status, "removed")) as typeof query;
   }
 
-  // Sorting
   if (filter === "prize") {
     query = query.orderBy(desc(daresTable.prizePool)) as typeof query;
   } else if (filter === "ending") {
@@ -62,31 +189,17 @@ router.get("/", async (req, res) => {
   }
 
   const dares = await query;
-
-  // Attach entry counts
-  const allEntries = await db
-    .select({ dareId: entriesTable.dareId, id: entriesTable.id })
-    .from(entriesTable)
-    .where(ne(entriesTable.status, "removed"));
-
-  const entryCountMap: Record<number, number> = {};
-  for (const e of allEntries) {
-    entryCountMap[e.dareId] = (entryCountMap[e.dareId] ?? 0) + 1;
-  }
-
-  const result = dares.map((d) => ({
-    ...d,
-    entryCount: entryCountMap[d.id] ?? 0,
-  }));
+  const result = await attachScoringData(dares);
 
   if (filter === "submissions") {
-    result.sort((a, b) => b.entryCount - a.entryCount);
+    result.sort((a, b) => (b.entryCount as number) - (a.entryCount as number));
   }
 
   res.json({ dares: result });
 });
 
-// GET /api/dares/:id
+// ─── GET /api/dares/:id ──────────────────────────────────────────────────────
+
 router.get("/:id", async (req, res) => {
   await closeExpiredDares();
 
@@ -133,7 +246,8 @@ router.get("/:id", async (req, res) => {
   });
 });
 
-// POST /api/dares — create and fund initial pool from creator's wallet
+// ─── POST /api/dares ─────────────────────────────────────────────────────────
+
 router.post("/", requireAuth, async (req, res) => {
   const parsed = createDareSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -152,7 +266,6 @@ router.post("/", requireAuth, async (req, res) => {
   const userId = req.user!.userId;
   const amountCents = prizePool * 100;
 
-  // Check wallet balance
   const [wallet] = await db
     .select()
     .from(walletsTable)
@@ -168,7 +281,6 @@ router.post("/", requireAuth, async (req, res) => {
   const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000);
 
   const dare = await db.transaction(async (tx) => {
-    // Create the dare
     const [newDare] = await tx
       .insert(daresTable)
       .values({
@@ -182,7 +294,6 @@ router.post("/", requireAuth, async (req, res) => {
 
     if (!newDare) throw new Error("Failed to create dare");
 
-    // Deduct from creator's wallet
     await tx
       .update(walletsTable)
       .set({
@@ -191,7 +302,6 @@ router.post("/", requireAuth, async (req, res) => {
       })
       .where(eq(walletsTable.userId, userId));
 
-    // Record wallet transaction
     const [txn] = await tx
       .insert(walletTransactionsTable)
       .values({
@@ -204,7 +314,6 @@ router.post("/", requireAuth, async (req, res) => {
       })
       .returning();
 
-    // Record pool contribution
     await tx.insert(poolContributionsTable).values({
       dareId: newDare.id,
       userId,

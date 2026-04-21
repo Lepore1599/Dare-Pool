@@ -97,6 +97,13 @@ export interface ApiProfileComment {
   createdAt: string;
 }
 
+export interface ApiBoostInfo {
+  boostTier: string;           // "tier1" | "tier2" | "tier3"
+  endsAt: string;
+  boostedByUsername: string | null;
+  boostedByUserId: number;
+}
+
 export interface ApiDare {
   id: number;
   title: string;
@@ -114,7 +121,12 @@ export interface ApiDare {
   isFeatured: boolean;
   reportCount: number;
   entryCount: number;
+  voteCount?: number;
+  commentCount?: number;
+  recentFundingDollars?: number;
+  recentFunderCount?: number;
   funderCount?: number;
+  boostInfo?: ApiBoostInfo | null;
 }
 
 export interface ApiEntry {
@@ -454,6 +466,64 @@ export interface ApiReel {
 export async function apiGetReels(limit = 30, offset = 0) {
   return request<{ reels: ApiReel[]; limit: number; offset: number }>(
     "GET", `/reels?limit=${limit}&offset=${offset}`
+  );
+}
+
+// ─── Boosts ───────────────────────────────────────────────────────────────────
+
+export interface ApiBoost {
+  id: number;
+  dareId: number;
+  purchasedByUserId: number;
+  boostTier: string;
+  amountPaid: number;
+  startsAt: string;
+  endsAt: string;
+  status: string;
+  createdAt: string;
+}
+
+export async function apiPurchaseBoost(dareId: number, tier: "tier1" | "tier2" | "tier3") {
+  return request<{ boost: ApiBoost }>("POST", "/boosts", { dareId, tier });
+}
+
+export async function apiGetActiveBoosts() {
+  return request<{ boosts: ApiBoost[] }>("GET", "/boosts/active");
+}
+
+// ─── Store ────────────────────────────────────────────────────────────────────
+
+export interface ApiStoreBadge {
+  id: string;
+  label: string;
+  emoji: string;
+  description: string;
+  amountCents: number;
+}
+
+export interface ApiUserBadge {
+  id: number;
+  userId: number;
+  badgeId: string;
+  purchasedAt: string;
+  equippedAt: string | null;
+}
+
+export async function apiGetStoreItems() {
+  return request<{ badges: ApiStoreBadge[] }>("GET", "/store/items");
+}
+
+export async function apiGetMyBadges() {
+  return request<{ badges: ApiUserBadge[] }>("GET", "/store/badges");
+}
+
+export async function apiPurchaseBadge(badgeId: string) {
+  return request<{ badge: ApiUserBadge }>("POST", "/store/badges/purchase", { badgeId });
+}
+
+export async function apiEquipBadge(badgeId: string, equip: boolean) {
+  return request<{ success: boolean; equipped: string | null }>(
+    "POST", "/store/badges/equip", { badgeId, equip }
   );
 }
 

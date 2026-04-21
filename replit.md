@@ -40,15 +40,34 @@ pnpm workspace monorepo using TypeScript. DarePool — a full-stack mobile-first
 
 ## Pages
 
-- `/` — Home feed (active/ended filter, live countdown timers, real stats)
+- `/` — Home feed with Hot/Trending/Recent tabs, boosted dare section, smart labels (Hot/Trending/New/Ending Soon/Boosted)
 - `/create` — Create dare form (deducts initial prizePool from wallet)
 - `/dare/:id` — Dare detail: fund button, submit entry, vote, payout breakdown, transfer status
+- `/store` — In-app store: profile badges ($0.99–$9.99) + dare boosts ($1.99–$9.99); accessed via sparkles icon in navbar
 - `/reels` — TikTok-style full-screen vertical entry video feed
 - `/wallet` — Balance, Stripe deposit/withdraw
 - `/notifications` — Dare completion and pool transfer notifications with read/unread state
 - `/leaderboard` — Past dares, hall of fame, total votes
 - `/profile/:id` — User profile with stats and activity
 - `/admin` — Admin dashboard (requires `isAdmin=true`)
+
+## Feed Scoring (client-side, `Home.tsx`)
+
+- **Hot score** = `recentFundingDollars × 1.5 + recentFunderCount × 6 + entryCount × 2`
+  - "Hot" label shows on top 25% of active dares by hot score
+- **Trending score** = `prizePool × 0.5 + entryCount × 10 + voteCount × 5 + recentFunderCount × 8 + commentCount × 2`
+  - "Trending" label shows on top 30% of active dares by trending score
+- **Recent** = sorted by `createdAt` descending (newest first)
+- **Boosted** dares always appear in a dedicated section above tabs, sorted by tier (24h > 10h > 2h), then by longest remaining time. Max 3 shown.
+
+## Store System
+
+- **Boost tiers**: tier1=$1.99/2h, tier2=$4.99/10h, tier3=$9.99/24h — deducted from wallet
+- **Badges**: bronze=$0.99, silver=$2.99, gold=$4.99, premium=$9.99 — deducted from wallet, stored in `user_badges`
+- **Boosts** stored in `boosts` table with `status=active/expired/canceled` and `endsAt` timestamp
+- Boost ordering: tier3 > tier2 > tier1 → then by `endsAt` desc
+- Expired boosts stop affecting feed automatically (queries filter `endsAt > now()`)
+- Admin can inspect active boosts at `GET /api/boosts/active`
 
 ## Key API Routes
 

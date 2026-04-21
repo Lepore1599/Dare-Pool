@@ -2,7 +2,7 @@
 
 ## Overview
 
-pnpm workspace monorepo using TypeScript. DarePool — a full-stack mobile-first dark-mode web app where users compete to complete dares for a prize pool. Upgraded from localStorage prototype to a production-ready app with PostgreSQL, real accounts, and JWT auth.
+pnpm workspace monorepo using TypeScript. DarePool — a full-stack mobile-first dark-mode web app where users compete to complete dares for a prize pool. Production-ready with PostgreSQL, real accounts, JWT auth, Stripe payments, and full 48-hour dare lifecycle with automatic payouts.
 
 ## Architecture
 
@@ -13,23 +13,62 @@ pnpm workspace monorepo using TypeScript. DarePool — a full-stack mobile-first
 ## DarePool Features
 
 - **Auth**: Real email/password accounts with bcrypt hashing + JWT stored in `localStorage`
-- **Dares**: Create dares with 48h expiration, server-side content moderation (hard-block + soft-warn)
-- **Entries**: Submit via URL link or video file upload (up to 200MB, served from `/api/uploads`)
+- **Dare lifecycle**: 48h timer, funding from wallet, submissions, voting, automatic expiration processing
+- **Payout split**: 80% to winner, 10% to dare creator, 10% to platform — all processed server-side
+- **Pool transfer**: If dare expires with no valid submissions, 100% transfers to best eligible active dare (highest prizePool, ≥6h remaining). Funders get notified.
+- **Entries**: Submit via video file upload only (up to 200MB, served from `/api/uploads`)
 - **Votes**: One vote per user per dare, no self-voting, enforced server-side
-- **Expiration engine**: `closeExpiredDares()` auto-picks winner by voteCount on GET /dares
+- **Funding**: `POST /api/dares/:id/fund` — deduct from wallet, add to prizePool, tracked in poolContributions table
+- **Expiration engine**: `closeExpiredDares()` lazily runs on GET /dares and GET /dares/:id. Idempotent — re-entrant safe via status check.
+- **Wallet**: Stripe Checkout deposits, Stripe Connect withdrawals; balances in cents
+- **Notifications**: Funders notified when pool transfers; winners notified on payout
 - **Reports**: Reason + details, stored in DB, admin can dismiss or action
+- **Comments**: Dare-level and entry-level comments with slur/threat blocking
 - **User profiles**: Stats page at `/profile/:id` showing wins, entries, dares posted
 - **Admin dashboard**: `/admin` (admin-only) — reports queue, dare management, user banning
-- **Fairness**: Unique constraints on votes; 409 on duplicate entry/vote; 403 on self-vote
+- **Reels**: TikTok-style full-screen vertical video feed of all entry uploads
+- **Fairness**: Unique constraints on votes; 409 on duplicate entry/vote; 403 on self-vote; dare creator can't submit to own dare
+
+## Dare Status Values
+
+- `active` — live, accepting funding/submissions/votes
+- `completed` — winner selected, payouts distributed
+- `expired_no_submissions` — ended with no valid entries (possible admin review)
+- `transferred` — pool moved to another active dare (transferredToDareId set)
+- `reported` — flagged for moderation
+- `removed` — removed by admin
 
 ## Pages
 
 - `/` — Home feed (active/ended filter, live countdown timers, real stats)
-- `/create` — Create dare form with server-side moderation
-- `/dare/:id` — Dare detail, submit entry, vote, report
+- `/create` — Create dare form (deducts initial prizePool from wallet)
+- `/dare/:id` — Dare detail: fund button, submit entry, vote, payout breakdown, transfer status
+- `/reels` — TikTok-style full-screen vertical entry video feed
+- `/wallet` — Balance, Stripe deposit/withdraw
+- `/notifications` — Dare completion and pool transfer notifications with read/unread state
 - `/leaderboard` — Past dares, hall of fame, total votes
 - `/profile/:id` — User profile with stats and activity
 - `/admin` — Admin dashboard (requires `isAdmin=true`)
+
+## Key API Routes
+
+- `GET /api/dares` — list with entryCount, new status fields
+- `GET /api/dares/:id` — detail with funderCount, transferredToDareTitle
+- `POST /api/dares` — create (deducts prizePool from creator wallet)
+- `POST /api/dares/:dareId/fund` — fund dare from wallet
+- `GET /api/dares/:dareId/fund` — funder stats
+- `GET /api/notifications` — user notifications with unreadCount
+- `POST /api/notifications/:id/read` — mark read
+- `POST /api/notifications/read-all` — mark all read
+- `GET /api/reels` — paginated video entries with dare info
+- `GET /api/wallet` — balance + transactions + payout account
+
+## DB Schema (key tables)
+
+- `dares` — includes `transferred_to_dare_id`, `transfer_reason`
+- `pool_contributions` — tracks who funded each dare
+- `notifications` — type, title, message, relatedDareId, relatedTargetDareId, isRead
+- `wallets`, `wallet_transactions` — all money movements; transaction types include dare_fund, dare_win_credit, dare_creator_credit, platform_fee, dare_pool_transfer_out/in
 
 ## Seed Data
 
@@ -43,44 +82,17 @@ POST `/api/seed` to populate demo dares/users:
 - **Node.js version**: 24
 - **Package manager**: pnpm
 - **TypeScript version**: 5.9
-- **Frontend**: React 19, Vite 7, Wouter, Framer Motion, Sonner toasts, TailwindCSS
+- **Frontend**: React 19, Vite 7, Wouter, Framer Motion, Sonner toasts, TailwindCSS, date-fns
 - **API framework**: Express 5
 - **Auth**: jsonwebtoken (HS256) + bcryptjs
 - **Database**: PostgreSQL + Drizzle ORM
 - **Validation**: Zod (`zod/v4`), `drizzle-zod`
-- **File uploads**: Multer (200MB limit, MP4/WebM/MOV/AVI)
-- **Build**: esbuild (ESM bundle for API server)
+- **Payments**: Stripe (Checkout for deposits, Connect Express for payouts), stripe-replit-sync
+- **File uploads**: multer, stored in `artifacts/api-server/uploads/`
+- **Logging**: pino + pino-http
 
-## Profile System
+## Wallet Balance Units
 
-- **Profile page** (`/profile/:id`) — full competitive profile with stats, badges, tabbed history
-- **Stats computed** live from entries/comments/votes tables on every request — always accurate
-- **Badges**: First Win 🔥, Champion 👑, Legend 🏆, Top Performer 🌟, Competitor 📋, Active Competitor 🎯, Commentator 💬, Hot Streak ⚡, Clean Account ✅, Early User 🚀
-- **Tabs**: Entries (with sort: newest / most voted / winners only), Wins, Comments
-- **Edit profile**: bio + avatar upload (from device) + username change — only visible on own profile
-- **Avatar upload**: `POST /api/users/:id/avatar` (multer, jpg/jpeg/png/webp, max 5MB, stored in `uploads/avatars/`)
-- **Username cooldown**: 30-day server-enforced limit tracked via `lastUsernameChangeAt` DB column; admins bypass; error includes next allowed date
-- **Clickable usernames everywhere**: Home feed, Dare Detail, Leaderboard, Comments, TikTok feed
-- **Video submissions**: upload-only (no link pasting); `capture="environment"` hint for mobile camera roll
-
-## Submission System
-
-- **Upload only** — link-based submission UI removed; only file upload allowed
-- **Server-side validation** for video type (mp4/webm/mov/avi) and size (200MB max)
-- **Mobile-native upload zone** with tap target, file name preview, upload progress bar
-
-## DB Schema (lib/db/src/schema/)
-
-- `users` — id, username, email, passwordHash, isAdmin, isBanned, strikeCount, wins, totalEntries, totalVotesCast
-- `dares` — id, title, description, prizePool, status, expiresAt, winnerEntryId, isFeatured, reportCount
-- `entries` — id, dareId, userId, videoUrl, videoType, voteCount, status
-- `votes` — id, dareId, entryId, userId (unique constraint prevents double-voting)
-- `reports` — id, dareId?, entryId?, reportedByUserId, reason, details, status
-- `admin_actions` — id, adminUserId, targetType, targetId, action, notes
-
-## Key Commands
-
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- `pnpm --filter @workspace/api-server run dev` — run API server locally
-- `pnpm --filter @workspace/dare-pool run dev` — run frontend locally
-- `cd lib/db && pnpm tsc` — build DB type declarations (needed for API server tsc)
+- `availableBalance`, `withdrawableBalance`, `pendingBalance` — **cents** (multiply by 100 from dollars)
+- `prizePool` on dares — **dollars** (integer)
+- When computing payouts: `prizePool * 100` gives cents to distribute

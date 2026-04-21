@@ -1,12 +1,16 @@
 import { useState, useEffect, useCallback } from "react";
 import { useLocation } from "wouter";
-import { ArrowLeft, Trophy, Users, Crown, Video, Play, Upload, Flag, Heart } from "lucide-react";
+import { ArrowLeft, Trophy, Users, Crown, Video, Play, Upload, Flag, Heart, Wallet, ArrowRight, Info } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "wouter";
-import { apiGetDare, apiGetEntries, apiVote, type ApiDare, type ApiEntry } from "@/lib/api";
+import {
+  apiGetDare, apiGetEntries, apiVote, apiFundDare,
+  type ApiDare, type ApiEntry,
+} from "@/lib/api";
 import { useUser } from "@/context/UserContext";
 import { CountdownBadge } from "@/components/CountdownBadge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { LoginModal } from "@/components/LoginModal";
 import { SubmitEntryModal } from "@/components/SubmitEntryModal";
 import { ReportModal } from "@/components/ReportModal";
@@ -26,6 +30,9 @@ export function DareDetail({ id }: DareDetailProps) {
   const [showLogin, setShowLogin] = useState(false);
   const [showSubmit, setShowSubmit] = useState(false);
   const [showReport, setShowReport] = useState(false);
+  const [showFund, setShowFund] = useState(false);
+  const [fundAmount, setFundAmount] = useState("");
+  const [funding, setFunding] = useState(false);
   const [feedStartIndex, setFeedStartIndex] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -49,7 +56,6 @@ export function DareDetail({ id }: DareDetailProps) {
 
   useEffect(() => { load(); }, [load]);
 
-  // Open the feed at a shared deep-link entry (#entry-123) once entries load
   useEffect(() => {
     if (entries.length === 0) return;
     const hash = window.location.hash;
@@ -65,13 +71,33 @@ export function DareDetail({ id }: DareDetailProps) {
     if (votedEntryId !== null || dare?.status !== "active") return;
     try {
       await apiVote(numId, entryId);
-      // Optimistic update so the heart number bumps immediately in the feed
       setVotedEntryId(entryId);
       setEntries((prev) => prev.map((e) => e.id === entryId ? { ...e, voteCount: e.voteCount + 1 } : e));
       toast.success("Vote cast!");
       load();
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Failed to cast vote.");
+    }
+  };
+
+  const handleFund = async () => {
+    if (!user) { setShowLogin(true); return; }
+    const amount = Number(fundAmount);
+    if (!Number.isInteger(amount) || amount < 1) {
+      toast.error("Enter a whole dollar amount of at least $1.");
+      return;
+    }
+    setFunding(true);
+    try {
+      const { newPrizePool } = await apiFundDare(numId, amount);
+      setDare((d) => d ? { ...d, prizePool: newPrizePool } : d);
+      setFundAmount("");
+      setShowFund(false);
+      toast.success(`Added $${amount} to the pool!`);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to fund dare.");
+    } finally {
+      setFunding(false);
     }
   };
 
@@ -92,9 +118,16 @@ export function DareDetail({ id }: DareDetailProps) {
     );
   }
 
-  const expired = dare.status !== "active";
+  const isActive = dare.status === "active";
+  const isCompleted = dare.status === "completed";
+  const isTransferred = dare.status === "transferred";
+  const isNoSubmissions = dare.status === "expired_no_submissions";
+  const expired = !isActive;
   const winner = entries.find((e) => e.status === "winner");
   const flagged = dare.status === "reported";
+
+  const winnerCut = Math.floor(dare.prizePool * 0.8);
+  const creatorCut = Math.floor(dare.prizePool * 0.1);
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">
@@ -137,20 +170,38 @@ export function DareDetail({ id }: DareDetailProps) {
         <div className="flex items-start justify-between gap-4 mb-3">
           <div className="flex-1">
             <div className="flex flex-wrap items-center gap-2 mb-2">
-              {expired ? (
-                <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-muted text-muted-foreground">Ended</span>
-              ) : (
+              {isActive ? (
                 <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-primary/20 text-primary">Live</span>
+              ) : isCompleted ? (
+                <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-400">Completed</span>
+              ) : isTransferred ? (
+                <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-500/20 text-blue-400">Pool Transferred</span>
+              ) : isNoSubmissions ? (
+                <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-muted text-muted-foreground">No Submissions</span>
+              ) : (
+                <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-muted text-muted-foreground">Ended</span>
               )}
-              <Link href={`/profile/${dare.createdByUserId}`} className="text-xs text-muted-foreground hover:text-primary transition-colors">by {dare.createdByUsername}</Link>
+              <Link href={`/profile/${dare.createdByUserId}`} className="text-xs text-muted-foreground hover:text-primary transition-colors">
+                by {dare.createdByUsername}
+              </Link>
             </div>
             <h1 className="text-xl font-black text-foreground leading-snug">{dare.title}</h1>
           </div>
           <div className="text-right flex-shrink-0">
             <div className="text-2xl font-black text-amber-400 glow-gold">${dare.prizePool}</div>
             <div className="text-xs text-muted-foreground">prize pool</div>
+            {(dare.funderCount ?? 0) > 0 && (
+              <div className="text-[10px] text-muted-foreground mt-0.5">{dare.funderCount} funder{dare.funderCount !== 1 ? "s" : ""}</div>
+            )}
           </div>
         </div>
+
+        {isActive && (
+          <div className="text-[11px] text-muted-foreground bg-secondary/50 rounded-lg px-3 py-1.5 mb-3 flex items-center gap-1.5">
+            <Info className="w-3 h-3 flex-shrink-0" />
+            Winner gets 80% · Creator gets 10% · Platform 10%
+          </div>
+        )}
 
         <p className="text-sm text-muted-foreground mb-4 leading-relaxed">{dare.description}</p>
 
@@ -159,7 +210,7 @@ export function DareDetail({ id }: DareDetailProps) {
             <CountdownBadge expiresAt={new Date(dare.expiresAt).getTime()} large />
             <span className="flex items-center gap-1.5 text-muted-foreground">
               <Users className="w-4 h-4" />
-              <span className="font-semibold text-foreground">{dare.entryCount}</span> entries
+              <span className="font-semibold text-foreground">{entries.length}</span> entries
             </span>
           </div>
           <div className="flex items-center gap-2">
@@ -169,28 +220,123 @@ export function DareDetail({ id }: DareDetailProps) {
               <Flag className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Report</span>
             </button>
-            {!expired && (
-              <Button onClick={() => user ? setShowSubmit(true) : setShowLogin(true)}
-                className="bg-primary hover:bg-primary/90 text-white font-bold glow-primary-sm"
-                data-testid="btn-submit-entry">
-                <Upload className="w-4 h-4 mr-1.5" /> Submit Entry
-              </Button>
+            {isActive && (
+              <>
+                <Button variant="outline" size="sm"
+                  onClick={() => user ? setShowFund(true) : setShowLogin(true)}
+                  className="border-amber-400/40 text-amber-400 hover:bg-amber-400/10 text-xs gap-1"
+                  data-testid="btn-fund-dare">
+                  <Wallet className="w-3.5 h-3.5" /> Fund
+                </Button>
+                <Button onClick={() => user ? setShowSubmit(true) : setShowLogin(true)}
+                  className="bg-primary hover:bg-primary/90 text-white font-bold glow-primary-sm"
+                  data-testid="btn-submit-entry">
+                  <Upload className="w-4 h-4 mr-1.5" /> Submit
+                </Button>
+              </>
             )}
           </div>
         </div>
+
+        {/* Fund dare inline form */}
+        <AnimatePresence>
+          {showFund && (
+            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+              <div className="mt-3 pt-3 border-t border-border flex items-center gap-2">
+                <div className="relative flex-1">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
+                  <Input
+                    type="number" min={1} placeholder="10"
+                    value={fundAmount} onChange={(e) => setFundAmount(e.target.value)}
+                    className="pl-7 bg-secondary border-input"
+                    data-testid="input-fund-amount"
+                  />
+                </div>
+                <Button onClick={handleFund} disabled={funding}
+                  className="bg-amber-400 hover:bg-amber-300 text-black font-bold shrink-0"
+                  data-testid="btn-fund-confirm">
+                  {funding ? "Adding…" : "Add to Pool"}
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => setShowFund(false)}>Cancel</Button>
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-1.5 px-1">
+                Funds are deducted from your wallet balance immediately.
+              </p>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
 
+      {/* Winner banner */}
       <AnimatePresence>
-        {expired && winner && (
+        {isCompleted && winner && (
           <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-            className="bg-amber-400/15 border border-amber-400/30 rounded-2xl p-4 mb-5 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-400/20 flex items-center justify-center flex-shrink-0">
-              <Crown className="w-5 h-5 text-amber-400" />
+            className="bg-amber-400/15 border border-amber-400/30 rounded-2xl p-4 mb-5">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-400/20 flex items-center justify-center flex-shrink-0">
+                <Crown className="w-5 h-5 text-amber-400" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-amber-400 uppercase tracking-wider">Winner</p>
+                <p className="font-bold text-foreground">
+                  <Link href={`/profile/${winner.userId}`} className="hover:underline">{winner.username}</Link>
+                  {" "}won <span className="text-amber-400">${winnerCut}</span>
+                </p>
+              </div>
+            </div>
+            <div className="mt-3 grid grid-cols-3 gap-2 text-center text-xs">
+              <div className="bg-black/20 rounded-lg p-2">
+                <div className="font-bold text-amber-400">${winnerCut}</div>
+                <div className="text-muted-foreground">Winner (80%)</div>
+              </div>
+              <div className="bg-black/20 rounded-lg p-2">
+                <div className="font-bold text-purple-400">${creatorCut}</div>
+                <div className="text-muted-foreground">Creator (10%)</div>
+              </div>
+              <div className="bg-black/20 rounded-lg p-2">
+                <div className="font-bold text-muted-foreground">${dare.prizePool - winnerCut - creatorCut}</div>
+                <div className="text-muted-foreground">Platform (10%)</div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Pool transferred banner */}
+      <AnimatePresence>
+        {isTransferred && (
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+            className="bg-blue-500/10 border border-blue-500/30 rounded-2xl p-4 mb-5 flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <ArrowRight className="w-5 h-5 text-blue-400" />
             </div>
             <div>
-              <p className="text-xs font-semibold text-amber-400 uppercase tracking-wider">Winner</p>
-              <p className="font-bold text-foreground">
-                {winner.username} won <span className="text-amber-400">${dare.prizePool}</span>
+              <p className="text-xs font-semibold text-blue-400 uppercase tracking-wider mb-1">Pool Transferred</p>
+              <p className="text-sm text-foreground">No valid submissions were received. The ${dare.prizePool} prize pool was moved to another active dare.</p>
+              {dare.transferredToDareTitle && dare.transferredToDareId && (
+                <Link href={`/dare/${dare.transferredToDareId}`}
+                  className="inline-flex items-center gap-1 mt-2 text-xs text-blue-400 hover:text-blue-300 font-medium">
+                  See: {dare.transferredToDareTitle} <ArrowRight className="w-3 h-3" />
+                </Link>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* No submissions banner */}
+      <AnimatePresence>
+        {isNoSubmissions && (
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+            className="bg-muted/50 border border-border rounded-2xl p-4 mb-5 flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center flex-shrink-0 mt-0.5">
+              <Info className="w-5 h-5 text-muted-foreground" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">No Valid Submissions</p>
+              <p className="text-sm text-muted-foreground">
+                {dare.transferReason ?? "This dare expired with no valid submissions."}
               </p>
             </div>
           </motion.div>
@@ -202,10 +348,10 @@ export function DareDetail({ id }: DareDetailProps) {
           <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
             <Trophy className="w-4 h-4 text-primary" /> Submissions
           </h2>
-          {!expired && user && votedEntryId === null && (
+          {isActive && user && votedEntryId === null && (
             <span className="text-xs text-muted-foreground">Vote for your favorite</span>
           )}
-          {!expired && user && votedEntryId !== null && (
+          {isActive && user && votedEntryId !== null && (
             <span className="text-xs text-emerald-400 font-medium">You voted!</span>
           )}
         </div>
@@ -214,7 +360,7 @@ export function DareDetail({ id }: DareDetailProps) {
           <div className="text-center py-12 text-muted-foreground bg-card border border-card-border rounded-2xl">
             <Video className="w-8 h-8 mx-auto mb-2 opacity-30" />
             <p className="font-medium">No entries yet</p>
-            {!expired && <p className="text-sm mt-1">Be the first to complete this dare!</p>}
+            {isActive && <p className="text-sm mt-1">Be the first to complete this dare!</p>}
           </div>
         ) : (
           <>
@@ -280,8 +426,7 @@ export function DareDetail({ id }: DareDetailProps) {
           </>
         )}
 
-      <DareComments dareId={numId} onRequestLogin={() => setShowLogin(true)} />
-
+        <DareComments dareId={numId} onRequestLogin={() => setShowLogin(true)} />
       </div>
     </div>
   );

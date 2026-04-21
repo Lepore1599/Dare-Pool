@@ -15,6 +15,7 @@ import { Profile } from "@/pages/Profile";
 import { AdminDashboard } from "@/pages/AdminDashboard";
 import { Reels } from "@/pages/Reels";
 import { Wallet } from "@/pages/Wallet";
+import { Notifications } from "@/pages/Notifications";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
@@ -40,6 +41,7 @@ function AppRoutes() {
           {(params) => <Profile id={params.id} />}
         </Route>
         <Route path="/admin" component={AdminDashboard} />
+        <Route path="/notifications" component={Notifications} />
         <Route component={NotFound} />
       </Switch>
       <BottomNav onLoginClick={() => setLoginOpen(true)} />

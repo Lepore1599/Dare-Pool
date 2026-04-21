@@ -6,3 +6,4 @@ export * from "./reports";
 export * from "./admin_actions";
 export * from "./comments";
 export * from "./wallets";
+export * from "./notifications";

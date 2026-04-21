@@ -1,5 +1,6 @@
 import { pgTable, serial, text, integer, timestamp } from "drizzle-orm/pg-core";
 import { usersTable } from "./users";
+import { daresTable } from "./dares";
 
 export const walletsTable = pgTable("wallets", {
   id: serial("id").primaryKey(),
@@ -18,7 +19,10 @@ export const walletsTable = pgTable("wallets", {
 export const walletTransactionsTable = pgTable("wallet_transactions", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => usersTable.id),
-  type: text("type").notNull(), // deposit | withdrawal | prize_win | dare_entry_fee | refund
+  // deposit | withdrawal | prize_win | dare_entry_fee | refund
+  // dare_fund | dare_win_credit | dare_creator_credit | platform_fee
+  // dare_pool_transfer_out | dare_pool_transfer_in
+  type: text("type").notNull(),
   status: text("status").notNull().default("pending"), // pending | completed | failed
   amount: integer("amount").notNull(), // cents, always positive
   currency: text("currency").notNull().default("usd"),
@@ -29,6 +33,15 @@ export const walletTransactionsTable = pgTable("wallet_transactions", {
   description: text("description"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const poolContributionsTable = pgTable("pool_contributions", {
+  id: serial("id").primaryKey(),
+  dareId: integer("dare_id").notNull().references(() => daresTable.id),
+  userId: integer("user_id").notNull().references(() => usersTable.id),
+  amount: integer("amount").notNull(), // dollars (same unit as prizePool)
+  walletTransactionId: integer("wallet_transaction_id"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 export const payoutAccountsTable = pgTable("payout_accounts", {
@@ -58,3 +71,4 @@ export type Wallet = typeof walletsTable.$inferSelect;
 export type WalletTransaction = typeof walletTransactionsTable.$inferSelect;
 export type PayoutAccount = typeof payoutAccountsTable.$inferSelect;
 export type WithdrawalRequest = typeof withdrawalRequestsTable.$inferSelect;
+export type PoolContribution = typeof poolContributionsTable.$inferSelect;

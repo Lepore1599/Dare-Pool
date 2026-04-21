@@ -1,13 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { ArrowLeft, Flame, DollarSign } from "lucide-react";
+import { ArrowLeft, Flame, DollarSign, Wallet } from "lucide-react";
 import { motion } from "framer-motion";
-import { apiCreateDare } from "@/lib/api";
+import { apiCreateDare, apiGetWallet } from "@/lib/api";
 import { useUser } from "@/context/UserContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { LoginModal } from "@/components/LoginModal";
+import { Link } from "wouter";
 import { toast } from "sonner";
 
 export function CreateDare() {
@@ -20,6 +21,12 @@ export function CreateDare() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [apiError, setApiError] = useState("");
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    apiGetWallet().then(({ wallet }) => setWalletBalance(wallet.availableBalance)).catch(() => {});
+  }, [user]);
 
   const validate = () => {
     const e: Record<string, string> = {};
@@ -99,21 +106,30 @@ export function CreateDare() {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-foreground mb-1.5" htmlFor="dare-prize">Prize Pool</label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-sm font-semibold text-foreground" htmlFor="dare-prize">Initial Prize Pool</label>
+              {user && walletBalance !== null && (
+                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Wallet className="w-3 h-3" /> Balance: <span className="font-medium text-foreground">${Math.floor(walletBalance / 100)}</span>
+                </span>
+              )}
+            </div>
             <div className="relative">
               <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input id="dare-prize" type="number" placeholder="100" value={prizePool}
+              <Input id="dare-prize" type="number" placeholder="10" value={prizePool}
                 onChange={(e) => { setPrizePool(e.target.value); setErrors((p) => ({ ...p, prizePool: "" })); }}
                 className="bg-secondary border-input text-foreground pl-9" min={1} data-testid="input-prize-pool" />
             </div>
             {errors.prizePool && <p className="text-xs text-destructive mt-1" data-testid="error-prize-pool">{errors.prizePool}</p>}
-            <p className="text-xs text-muted-foreground mt-1">No real payment — this is a demo.</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Deducted from your wallet. Need funds? <Link href="/wallet" className="text-primary hover:underline">Add to wallet</Link>
+            </p>
           </div>
 
-          <div className="bg-primary/10 border border-primary/20 rounded-xl p-4">
-            <p className="text-sm text-primary/90 font-medium">
-              Dare expires in 48 hours. The entry with the most votes wins the prize pool.
-            </p>
+          <div className="bg-primary/10 border border-primary/20 rounded-xl p-4 space-y-1.5">
+            <p className="text-sm text-primary/90 font-medium">Dare expires in 48 hours.</p>
+            <p className="text-xs text-primary/70">Winner gets 80% · You (creator) get 10% · Platform takes 10%</p>
+            <p className="text-xs text-primary/70">Anyone can fund the pool while the dare is live.</p>
           </div>
 
           <div className="bg-secondary rounded-xl px-4 py-3 text-xs text-muted-foreground leading-relaxed">

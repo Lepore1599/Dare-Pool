@@ -106,11 +106,15 @@ export interface ApiDare {
   createdByUsername: string | null;
   createdAt: string;
   expiresAt: string;
-  status: "active" | "expired" | "reported" | "removed";
+  status: "active" | "completed" | "expired" | "expired_no_submissions" | "transferred" | "reported" | "removed";
   winnerEntryId: number | null;
+  transferredToDareId: number | null;
+  transferReason: string | null;
+  transferredToDareTitle?: string | null;
   isFeatured: boolean;
   reportCount: number;
   entryCount: number;
+  funderCount?: number;
 }
 
 export interface ApiEntry {
@@ -387,6 +391,46 @@ export async function apiWithdrawFunds(amount: number) {
 
 export async function apiStartOnboarding() {
   return request<{ url: string }>("POST", "/wallet/onboard", {});
+}
+
+// ─── Dare Funding ─────────────────────────────────────────────────────────────
+
+export async function apiFundDare(dareId: number, amount: number) {
+  return request<{ success: boolean; newPrizePool: number }>(
+    "POST", `/dares/${dareId}/fund`, { amount }
+  );
+}
+
+export async function apiGetFundingStats(dareId: number) {
+  return request<{ funderCount: number }>("GET", `/dares/${dareId}/fund`);
+}
+
+// ─── Notifications ────────────────────────────────────────────────────────────
+
+export interface ApiNotification {
+  id: number;
+  userId: number;
+  type: string;
+  title: string;
+  message: string;
+  relatedDareId: number | null;
+  relatedTargetDareId: number | null;
+  isRead: boolean;
+  createdAt: string;
+}
+
+export async function apiGetNotifications() {
+  return request<{ notifications: ApiNotification[]; unreadCount: number }>(
+    "GET", "/notifications"
+  );
+}
+
+export async function apiMarkNotificationRead(id: number) {
+  return request<{ success: boolean }>("POST", `/notifications/${id}/read`, {});
+}
+
+export async function apiMarkAllNotificationsRead() {
+  return request<{ success: boolean }>("POST", "/notifications/read-all", {});
 }
 
 // ─── Reels ────────────────────────────────────────────────────────────────────

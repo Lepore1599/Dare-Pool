@@ -11,8 +11,11 @@ export const daresTable = pgTable("dares", {
   createdByUserId: integer("created_by_user_id").notNull().references(() => usersTable.id),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   expiresAt: timestamp("expires_at").notNull(),
-  status: text("status").notNull().default("active"), // active | expired | reported | removed
+  // active | completed | expired_no_submissions | transferred | reported | removed
+  status: text("status").notNull().default("active"),
   winnerEntryId: integer("winner_entry_id"),
+  transferredToDareId: integer("transferred_to_dare_id"),
+  transferReason: text("transfer_reason"),
   isFeatured: boolean("is_featured").notNull().default(false),
   reportCount: integer("report_count").notNull().default(0),
 });
@@ -21,6 +24,8 @@ export const insertDareSchema = createInsertSchema(daresTable).omit({
   id: true,
   status: true,
   winnerEntryId: true,
+  transferredToDareId: true,
+  transferReason: true,
   isFeatured: true,
   reportCount: true,
   createdAt: true,

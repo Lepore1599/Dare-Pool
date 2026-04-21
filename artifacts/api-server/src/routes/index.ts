@@ -13,6 +13,8 @@ import seedRouter from "./seed";
 import { entryCommentsRouter, dareCommentsRouter } from "./comments";
 import walletRouter from "./wallet";
 import reelsRouter from "./reels";
+import fundingRouter from "./funding";
+import notificationsRouter from "./notifications";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -31,6 +33,8 @@ router.use("/seed", seedRouter);
 router.use("/entries/:entryId/comments", entryCommentsRouter);
 router.use("/wallet", walletRouter);
 router.use("/reels", reelsRouter);
+router.use("/dares/:dareId/fund", fundingRouter);
+router.use("/notifications", notificationsRouter);
 
 // Serve uploaded files
 import express from "express";

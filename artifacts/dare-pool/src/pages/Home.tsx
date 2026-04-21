@@ -31,7 +31,7 @@ export function Home({ onLoginClick }: HomeProps) {
   useEffect(() => { load(); }, [load]);
 
   const active = dares.filter((d) => d.status === "active");
-  const ended = dares.filter((d) => d.status === "expired");
+  const ended = dares.filter((d) => d.status !== "active" && d.status !== "removed");
   const displayed = filter === "active" ? active : ended;
   const totalPool = dares.reduce((acc, d) => acc + d.prizePool, 0);
 
@@ -113,7 +113,16 @@ export function Home({ onLoginClick }: HomeProps) {
 }
 
 function DareCard({ dare, index }: { dare: ApiDare; index: number }) {
-  const expired = dare.status !== "active";
+  const isActive = dare.status === "active";
+  const isCompleted = dare.status === "completed";
+  const isTransferred = dare.status === "transferred";
+
+  function StatusBadge() {
+    if (isActive) return <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/20 text-primary">Live</span>;
+    if (isCompleted) return <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400">Completed</span>;
+    if (isTransferred) return <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400">Pool Moved</span>;
+    return <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground">Ended</span>;
+  }
 
   return (
     <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
@@ -124,11 +133,7 @@ function DareCard({ dare, index }: { dare: ApiDare; index: number }) {
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
-                {expired ? (
-                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground">Ended</span>
-                ) : (
-                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/20 text-primary">Live</span>
-                )}
+                <StatusBadge />
                 <Link
                   href={`/profile/${dare.createdByUserId}`}
                   onClick={(e) => e.stopPropagation()}

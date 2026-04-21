@@ -1,0 +1,264 @@
+Update my existing DarePool project. Do NOT rebuild from scratch. Keep my current UI style, dark mode design, bottom tab navigation, profiles, moderation, reports, comments, reels, wallet, and overall layout. Implement the dare pool lifecycle and payout structure exactly as follows.
+
+GOAL:
+Create a simple, always-live dare system with a 48-hour lifecycle, continuous funding, continuous submissions, voting-based winner selection, 80/10/10 payout split on successful dares, and automatic pool transfer if a dare ends with no valid submissions.
+
+IMPORTANT:
+- Reuse my existing components, routes, styling, backend, and database where possible
+- Do not remove or break current moderation, reports, comments, reels, wallet, or profile features
+- Keep the app mobile-first and polished
+- Do not rebuild the app from scratch
+- Keep all money logic server-side validated
+- Keep the current wallet architecture intact and integrate with it
+
+FINAL DARE STRUCTURE TO IMPLEMENT:
+
+SUCCESSFUL DARE FLOW:
+1. Dare is posted
+2. 48-hour timer starts immediately
+3. Users can fund the dare while it is live
+4. Users can submit attempts while it is live
+5. Users can vote on submissions while it is live
+6. When the 48-hour timer ends:
+   - submissions close
+   - voting closes
+   - the valid submission with the most votes wins
+7. Payout split:
+   - 80% to winning submission user
+   - 10% to the original dare creator
+   - 10% to platform
+
+FAILED DARE FLOW:
+If the dare ends with NO VALID SUBMISSIONS:
+- No winner is selected
+- No payout split is taken
+- 100% of the pool is transferred to another eligible active dare
+- Users who funded the dead dare are notified where the money moved
+
+CORE RULES TO ENFORCE:
+
+1. DARE TIMER
+- Every new dare gets a 48-hour countdown starting immediately at creation
+- Dares remain active until expiresAt is reached
+- While active:
+  - funding is allowed
+  - submissions are allowed
+  - voting is allowed
+- Once expired:
+  - funding disabled
+  - submissions disabled
+  - voting disabled
+
+2. FUNDING
+- Users can fund a dare from their wallet available balance
+- Validate sufficient balance on the server before accepting funding
+- Deduct funded amount immediately from available balance
+- Record all pool contributions in persistent transactions/history
+- Show total pool amount on the dare card/detail page
+- Show number of funders if possible
+- Keep funding simple and mobile-friendly
+
+3. SUBMISSIONS
+- Users can submit to an active dare while the dare is live
+- Keep existing video upload flow from camera roll/device library on mobile
+- Do not reintroduce link-based submissions
+- Enforce one submission per user per dare
+- Dare creator cannot submit to their own dare
+- Validate uploads server-side
+- Invalid or removed submissions should not count as valid submissions
+
+4. VOTING
+- Users can vote on submissions while the dare is live
+- Enforce one vote per user per dare
+- Users cannot vote for their own submission
+- Voting closes when dare expires
+- Keep vote totals persistent
+- If possible, preserve current UI and optionally hide live vote totals until the end or last portion of the timer, but the main requirement is that highest votes at expiration wins
+
+5. WINNER SELECTION
+When a dare expires:
+- Find all VALID submissions for that dare
+- “Valid submissions” means submissions that are active/not removed and pass moderation state
+- If there is at least one valid submission:
+  - find the submission with the highest vote count
+  - if there is a tie, break the tie by earliest valid submission createdAt
+  - mark that submission as the winner
+  - mark the dare as completed with winner selected
+  - calculate payouts:
+    - 80% to winner
+    - 10% to dare creator
+    - 10% to platform
+  - create persistent wallet/transaction records for all payouts
+  - credit the winner and dare creator to withdrawableBalance or the correct payout-ready balance used by the current wallet system
+  - record platform fee separately
+
+6. FAILED DARE / POOL TRANSFER
+If a dare expires with NO VALID SUBMISSIONS:
+- Do not select a winner
+- Do not give 10% to creator
+- Do not give 10% to platform
+- Transfer 100% of the dare pool to another eligible active dare
+
+ELIGIBLE TARGET DARE RULE:
+Do NOT transfer blindly to just any dare.
+Choose the target as:
+- an active dare
+- not expired
+- not the same dare
+- still open for submissions
+- has at least a minimum remaining time threshold (example: 6 hours left)
+- among eligible dares, transfer to the one with the highest current pool amount
+
+If no eligible active dare exists:
+- keep the amount in a system-level carryover pool / pending rollover bucket
+- or mark it for admin review
+- do not lose the funds
+- do not silently discard the money
+
+7. FUNDER NOTIFICATIONS
+When a dead dare’s pool is transferred:
+- notify users who funded that dare
+- notification should say their funded dare expired with no valid submissions
+- show which dare received the transferred pool
+- include the new dare title and link if possible
+- keep messaging clean and simple
+
+If an in-app notification system already exists, use it.
+If not, add a lightweight notification model and simple notification UI.
+
+8. DATABASE / DATA MODEL UPDATES
+Extend current models/tables as needed to support this lifecycle.
+
+DARES should include fields like:
+- id
+- title
+- description
+- createdByUserId
+- prizePool
+- createdAt
+- expiresAt
+- status (active, completed, expired_no_submissions, removed, transferred)
+- winnerEntryId nullable
+- transferredToDareId nullable
+- transferReason nullable
+
+ENTRIES should include or preserve:
+- id
+- dareId
+- userId
+- videoPath/videoUrl
+- createdAt
+- status (active, removed, flagged, winner)
+- voteCount
+- moderationState or equivalent valid/invalid indicator
+
+VOTES:
+- id
+- dareId
+- entryId
+- userId
+- createdAt
+
+POOL_CONTRIBUTIONS or wallet-linked transaction references:
+- id
+- dareId
+- userId
+- amount
+- createdAt
+- transactionId or walletTransactionId
+
+NOTIFICATIONS if needed:
+- id
+- userId
+- type
+- title
+- message
+- relatedDareId nullable
+- relatedTargetDareId nullable
+- isRead
+- createdAt
+
+9. LIFECYCLE ENGINE
+Create a reusable backend service/function to process dare expiration safely.
+
+Requirements:
+- On dare expiration, evaluate the dare exactly once
+- Handle:
+  - successful payout flow
+  - no-valid-submission transfer flow
+- Make processing idempotent so the dare is not paid/transferred twice
+- Ensure this still works after refresh/server restart
+- It should be possible to trigger processing:
+  - when the dare page is loaded after expiration
+  - through a periodic backend check
+  - or a scheduled job pattern appropriate for Replit
+- Prevent duplicate payout or duplicate pool transfer
+
+10. WALLET / MONEY INTEGRATION
+Integrate with the existing real-money wallet architecture.
+
+Requirements:
+- Funding uses available balance
+- Payouts credit the correct balances
+- Every money movement creates a wallet transaction
+- Keep clear transaction types such as:
+  - dare_fund
+  - dare_win_credit
+  - dare_creator_credit
+  - platform_fee
+  - dare_pool_transfer_out
+  - dare_pool_transfer_in
+- Keep all money calculations server-side
+- Never trust frontend calculations
+
+11. UI UPDATES
+Update the dare UI to reflect the new lifecycle.
+
+On dare cards / dare detail page show:
+- pool amount
+- countdown
+- submission count
+- whether the dare is active or completed
+- if completed, show winner
+- if expired with no submissions, show that the pool was transferred
+- if transferred, show destination dare if available
+
+On expired no-submission dares:
+- show a clear status like:
+  - “No valid submissions — pool transferred”
+- optionally link to the destination dare
+
+12. ADMIN / SAFETY
+Keep moderation and admin tools compatible.
+
+Requirements:
+- Removed/invalid submissions should not count toward winner selection
+- If all submissions are removed/invalid, treat the dare as having no valid submissions
+- Admin should be able to inspect:
+  - expired dares
+  - transferred pools
+  - completed payouts
+  - failed payout/transfer issues
+- Log important lifecycle actions for auditability
+
+13. USER-FACING RULES
+Make sure the app behavior reflects these rules:
+- Dare creator cannot submit to own dare
+- Users can only submit once per dare
+- Users can only vote once per dare
+- Users cannot vote for their own submission
+- If there are no valid submissions, pool transfers and no one takes a cut
+- If there is a valid winner, payout split is 80/10/10
+
+14. FINAL REQUIREMENTS
+When finished:
+- make sure the app still runs in Replit
+- explain what files were changed
+- explain how dare expiration is processed
+- explain how winner selection works
+- explain how no-submission transfer works
+- explain how the eligible transfer target is chosen
+- explain how wallet transactions are created
+- explain how notifications are created/sent
+- do not rebuild the app from scratch
+- preserve current style and existing features while adding this new lifecycle logic

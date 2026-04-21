@@ -59,7 +59,7 @@ router.post("/dares/:id/winner", async (req, res) => {
     // Reset old winner
     await tx.update(entriesTable).set({ status: "active" }).where(and(eq(entriesTable.dareId, id), eq(entriesTable.status, "winner")));
     // Set new winner
-    await tx.update(daresTable).set({ winnerEntryId: entryId, status: "expired" }).where(eq(daresTable.id, id));
+    await tx.update(daresTable).set({ winnerEntryId: entryId, status: "completed" }).where(eq(daresTable.id, id));
     await tx.update(entriesTable).set({ status: "winner" }).where(eq(entriesTable.id, entryId));
   });
   await logAction(req.user!.userId, "override_winner", "dare", id, `New winner entry: ${entryId}`);

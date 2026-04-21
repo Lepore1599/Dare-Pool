@@ -1,6 +1,8 @@
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { Flame, Shield } from "lucide-react";
+import { Flame, Shield, Bell } from "lucide-react";
 import { useUser } from "@/context/UserContext";
+import { apiGetNotifications } from "@/lib/api";
 
 interface NavbarProps {
   onLoginClick: () => void;
@@ -9,8 +11,22 @@ interface NavbarProps {
 export function Navbar({ onLoginClick: _ }: NavbarProps) {
   const { user } = useUser();
   const [location] = useLocation();
+  const [unreadCount, setUnreadCount] = useState(0);
 
-  // On reels, hide the top bar so the full-height feed isn't obstructed
+  useEffect(() => {
+    if (!user) { setUnreadCount(0); return; }
+    apiGetNotifications()
+      .then(({ unreadCount: c }) => setUnreadCount(c))
+      .catch(() => {});
+
+    const interval = setInterval(() => {
+      apiGetNotifications()
+        .then(({ unreadCount: c }) => setUnreadCount(c))
+        .catch(() => {});
+    }, 30_000);
+    return () => clearInterval(interval);
+  }, [user]);
+
   if (location === "/reels") return null;
 
   return (
@@ -26,8 +42,24 @@ export function Navbar({ onLoginClick: _ }: NavbarProps) {
           </span>
         </Link>
 
-        {/* Right side — admin shortcut only (other nav items live in BottomNav) */}
+        {/* Right side */}
         <div className="flex items-center gap-1">
+          {user && (
+            <Link href="/notifications">
+              <button
+                className="relative flex items-center justify-center w-9 h-9 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                title="Notifications"
+                data-testid="nav-notifications"
+              >
+                <Bell className="w-4.5 h-4.5" />
+                {unreadCount > 0 && (
+                  <span className="absolute top-1 right-1 w-4 h-4 bg-primary text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
+                )}
+              </button>
+            </Link>
+          )}
           {user?.isAdmin && (
             <Link href="/admin">
               <button

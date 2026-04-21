@@ -18,6 +18,30 @@ import {
 import { useUser } from "@/context/UserContext";
 import { Button } from "@/components/ui/button";
 
+// ─── PAYMENT FLOW SEPARATION ─────────────────────────────────────────────────
+//
+// DarePool has TWO distinct payment flows that must remain strictly separated:
+//
+// 1. WALLET / REAL-MONEY FLOW (Stripe) — Exempt from Apple IAP
+//    - Depositing funds into wallet via Stripe
+//    - Funding dares (placing money into prize pool)
+//    - Payouts to dare winners
+//    - Withdrawals via Stripe Connect
+//    → Apple allows real-money marketplace transactions via Stripe.
+//    → Apple does NOT take a cut of these transactions.
+//
+// 2. DIGITAL GOODS FLOW (currently wallet; must migrate to Apple IAP on iOS)
+//    - Purchasing profile badges
+//    - Purchasing dare boosts
+//    → Apple REQUIRES these to go through Apple In-App Purchase (StoreKit).
+//    → When releasing on iOS App Store, replace handleBuyBadge /
+//      handleBoostConfirm with calls to src/lib/iap.ts → purchaseProduct().
+//    → The backend must then verify the Apple receipt server-side before
+//      granting the item.
+//
+// See: artifacts/dare-pool/src/lib/iap.ts for the IAP integration placeholder.
+// ─────────────────────────────────────────────────────────────────────────────
+
 // ─── Boost tiers (mirrors backend definition) ─────────────────────────────────
 
 const BOOST_TIERS = [
@@ -78,6 +102,9 @@ export function Store() {
   useEffect(() => { loadData(); }, [loadData]);
 
   // ── Badge purchase ────────────────────────────────────────────────────────
+  // CURRENT: deducts from wallet balance (Stripe-backed)
+  // iOS App Store: replace this with iap.purchaseProduct(IAP_PRODUCT_IDS.BADGE_*)
+  // from src/lib/iap.ts, then verify receipt server-side.
 
   const handleBuyBadge = async (badgeId: string, cents: number) => {
     if (!user) { toast.error("Log in to purchase."); return; }
@@ -115,6 +142,9 @@ export function Store() {
   };
 
   // ── Boost purchase ────────────────────────────────────────────────────────
+  // CURRENT: deducts from wallet balance (Stripe-backed)
+  // iOS App Store: replace this with iap.purchaseProduct(IAP_PRODUCT_IDS.BOOST_*)
+  // from src/lib/iap.ts, then verify receipt server-side.
 
   const handleBoostConfirm = async () => {
     if (!selectedDare || !selectedTier) return;

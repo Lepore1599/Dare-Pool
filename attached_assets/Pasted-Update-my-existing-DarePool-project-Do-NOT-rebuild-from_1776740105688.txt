@@ -1,0 +1,152 @@
+Update my existing DarePool project. Do NOT rebuild from scratch. Keep my current UI style, dark mode design, bottom tab navigation, profiles, moderation, reports, comments, reels, wallet, store, and overall app logic.
+
+GOAL:
+Prepare my existing app for iOS App Store packaging and submission. This does NOT mean submitting it to Apple directly. It means making the project iOS-ready so it can be wrapped with Capacitor, opened in Xcode on a Mac/cloud Mac, tested on iPhone, and uploaded to TestFlight/App Store.
+
+IMPORTANT:
+- Do not remove or break existing app features
+- Do not rebuild the app from scratch
+- Do not change core dare/wallet/business logic unless needed for iOS compatibility
+- Preserve current routes, components, styles, and backend integration
+- Make the app as App Store-ready as possible from the code side
+- If something cannot be completed fully without Xcode/macOS, prepare everything needed and explain exactly what remains for Xcode
+
+MAIN OBJECTIVES:
+
+1. PREPARE PROJECT FOR CAPACITOR IOS WRAPPING
+- Add Capacitor dependencies if not already installed
+- Initialize Capacitor configuration if not already present
+- Create/update capacitor.config with sensible defaults
+- Add placeholder values for:
+  - appId (example placeholder: com.darepool.app)
+  - appName (DarePool)
+  - webDir (correct build output folder)
+- Make sure the app can be built into a static production web output suitable for Capacitor
+- Add npm scripts for:
+  - build
+  - capacitor sync
+  - capacitor ios open
+- If the project structure requires adjustments for Capacitor compatibility, make them cleanly
+
+2. IOS / MOBILE WEBVIEW COMPATIBILITY
+Audit and fix the app so it behaves well inside an iOS webview.
+
+Requirements:
+- Ensure proper mobile viewport meta tags
+- Prevent broken layout/overflow on iPhone sizes
+- Make bottom tab navigation safe-area friendly for iPhones
+- Respect iPhone safe areas / notch / home indicator spacing
+- Fix any fixed-position nav bars or modals that may collide with iOS safe areas
+- Ensure forms, buttons, inputs, bottom sheets, and modals behave correctly on mobile Safari/webview
+- Reduce accidental zoom on input focus where possible
+- Make sure video playback works well in iOS webview
+- Keep scroll behavior smooth and app-like
+
+3. APP STORE PREP: APP SHELL / ASSETS
+Prepare the app for native app packaging.
+
+Requirements:
+- Create structure/placeholders for:
+  - app icon assets
+  - splash screen assets
+  - launch screen config
+- Add a clean placeholder app icon path/config if needed
+- Add a clean placeholder splash config if needed
+- Keep asset references organized so they can be swapped later
+- If possible, create a folder structure like:
+  - assets/icons
+  - assets/splash
+- Explain what image sizes will still be needed later for final App Store packaging
+
+4. IOS-SPECIFIC UX CLEANUP
+Make the app feel more native on iPhone.
+
+Requirements:
+- Ensure transitions and page spacing feel mobile-first
+- Keep top bars and bottom bars polished
+- Prevent ugly browser-like feel where possible
+- Ensure touch targets are large enough
+- Make settings pages, profile pages, wallet, reels, and home all feel smooth on iPhone
+- Keep dark mode premium
+- Do not remove app personality
+
+5. PREPARE FOR APP STORE COMPLIANCE FROM CODE SIDE
+Do NOT attempt legal review, but prepare the code structure properly.
+
+Requirements:
+- Make sure legal pages exist and are routable:
+  - Terms of Service
+  - Community Guidelines
+  - Privacy Policy
+  - Safety and Risk Disclaimer
+- Make sure signup requires agreement acceptance before account creation completes
+- Make sure acceptance timestamps are stored if backend already supports it
+- Keep settings pages linked to legal pages
+- Make sure settings/profile area includes account info and settings access
+- Make sure moderation/reporting exists and is accessible
+
+6. PAYMENT SYSTEM SEPARATION PREP
+Prepare the app structure for App Store compliance by keeping real-money wallet logic and digital purchases clearly separated.
+
+Requirements:
+- Keep Stripe wallet logic for:
+  - deposits
+  - dare funding
+  - payouts
+  - withdrawals
+- Make sure boosts/badges are NOT purchased using wallet balance
+- Add clear code comments or placeholder purchase service separation for:
+  - wallet money flow
+  - digital purchase flow (future Apple IAP)
+- If the current app still allows boosts or badges from wallet funds, refactor that flow so it is clearly separated and easy to replace with Apple IAP later
+- Add placeholder service/module for Apple IAP integration if useful
+- Do not fake Apple IAP, just structure the code cleanly for it
+
+7. BUILD / EXPORT READINESS
+Set the project up so I can run clear commands later on a Mac/cloud Mac.
+
+Requirements:
+- Add or clean up scripts for:
+  - production build
+  - capacitor sync
+  - open ios project
+- Ensure build output goes to the correct folder used by Capacitor
+- Remove obvious blockers that would prevent the app from loading in a wrapped webview
+- If environment variables are needed, document them clearly
+
+8. ROUTING / DEEP LINK SAFETY
+Make sure internal routing works cleanly in a wrapped app.
+
+Requirements:
+- Ensure client-side routing won’t break in Capacitor/webview
+- Make necessary adjustments for SPA routing if needed
+- Prevent blank screens on refresh or route mismatch where possible
+- Keep navigation app-like
+
+9. ERROR HANDLING / FALLBACKS
+Improve production stability where possible.
+
+Requirements:
+- Add clean handling for missing data or failed API calls
+- Prevent obvious crashes on mobile screens
+- Add friendly loading states where necessary
+- Keep it polished, not overly verbose
+
+10. FINAL OUTPUT / DOCUMENTATION
+When finished, explain:
+- what files were added or changed
+- whether Capacitor was added/configured
+- what build scripts are available
+- what remains to be done on macOS/Xcode
+- which parts are fully prepared for iOS packaging
+- what assets I still need to provide manually
+- any blockers that still need a Mac or Apple Developer activation
+
+DO NOT:
+- pretend the app can be submitted directly from Replit
+- remove any important current features
+- rebuild the app from scratch
+- break current business logic unless required to separate wallet money from digital purchases
+
+End result:
+I want this project prepared as much as possible for iOS App Store packaging so that when I open it on a Mac/cloud Mac, the remaining steps are minimal.

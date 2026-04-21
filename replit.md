@@ -10,6 +10,20 @@ pnpm workspace monorepo using TypeScript. DarePool — a full-stack mobile-first
 - **API Server** (`artifacts/api-server`) — Express 5, port 8080, serves all routes under `/api`
 - Vite proxies `/api` → `localhost:8080` in dev
 
+## iOS / Capacitor Preparation (Complete)
+
+- Capacitor installed: `@capacitor/core`, `@capacitor/cli`, `@capacitor/ios`
+- `capacitor.config.ts` — appId: `com.darepool.app`, webDir: `dist/public`
+- `vite.capacitor.config.ts` — standalone build config (no Replit env deps, `base: "./"`)
+- Build scripts: `build:capacitor`, `cap:sync`, `cap:ios`, `cap:run`
+- `index.html` — iOS meta tags: `viewport-fit=cover`, `apple-mobile-web-app-capable`, `theme-color`
+- `src/index.css` — iOS CSS: 16px inputs (no zoom), safe areas, tap highlight, overscroll
+- `src/lib/iap.ts` — Apple IAP placeholder service with full integration checklist
+- `Store.tsx` — clear comments separating Stripe (wallet/dares) from digital goods (future IAP)
+- `ios-assets/icons/` and `ios-assets/splash/` — asset size guides
+- `IOS_PREP.md` — comprehensive prep guide at project root
+- Still needed on macOS: `npx cap add ios`, Xcode signing, app icons, Apple IAP products
+
 ## DarePool Features
 
 - **Auth**: Real email/password accounts with bcrypt hashing + JWT stored in `localStorage`

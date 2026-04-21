@@ -299,3 +299,85 @@
     inset: -1px;
   }
 }
+
+/* ─── iOS / Capacitor / Mobile WebView Compatibility ───────────────────────── */
+
+/* Prevent iOS text size adjustment when rotating */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Smooth momentum scrolling on iOS */
+html, body {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: none;
+}
+
+/* Prevent callout on long-press (links, images) */
+* {
+  -webkit-touch-callout: none;
+}
+
+/* Allow text selection in inputs/textareas */
+input, textarea, [contenteditable] {
+  -webkit-touch-callout: default;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* Prevent iOS input zoom: all text inputs must be >= 16px */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="search"],
+input[type="url"],
+input[type="tel"],
+textarea,
+select {
+  font-size: 16px !important;
+}
+
+/* Improve tap highlight on iOS — use our own active states instead */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Safe area insets — bottom spacing for iPhone home indicator */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.safe-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+/* Main content area: account for top navbar + bottom tab bar + iOS safe areas */
+.app-content {
+  padding-bottom: calc(4rem + env(safe-area-inset-bottom));
+}
+
+/* Fixed bottom bar: always clear iPhone home indicator */
+.fixed-bottom-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-bottom: max(env(safe-area-inset-bottom), 8px);
+}
+
+/* iOS-style smooth card press effect */
+.press-scale {
+  transition: transform 0.12s ease;
+}
+.press-scale:active {
+  transform: scale(0.97);
+}
+
+/* Prevent overscroll bounce from showing white background on iOS */
+body {
+  background-color: hsl(224, 20%, 8%);
+}
+
+/* Video: prevent iOS from auto-fullscreening inline videos */
+video {
+  -webkit-playsinline: true;
+}

@@ -205,37 +205,37 @@ export function DareDetail({ id }: DareDetailProps) {
 
         <p className="text-sm text-muted-foreground mb-4 leading-relaxed">{dare.description}</p>
 
-        <div className="flex items-center justify-between border-t border-border pt-3">
-          <div className="flex items-center gap-4 text-sm">
-            <CountdownBadge expiresAt={new Date(dare.expiresAt).getTime()} large />
-            <span className="flex items-center gap-1.5 text-muted-foreground">
-              <Users className="w-4 h-4" />
-              <span className="font-semibold text-foreground">{entries.length}</span> entries
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
+        <div className="border-t border-border pt-3 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4 text-sm">
+              <CountdownBadge expiresAt={new Date(dare.expiresAt).getTime()} large />
+              <span className="flex items-center gap-1.5 text-muted-foreground">
+                <Users className="w-4 h-4" />
+                <span className="font-semibold text-foreground">{entries.length}</span> entries
+              </span>
+            </div>
             <button onClick={() => setShowReport(true)}
               className="flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive transition-colors px-2 py-1.5 rounded-lg hover:bg-destructive/10"
               data-testid="btn-report-dare">
               <Flag className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Report</span>
+              <span>Report</span>
             </button>
-            {isActive && (
-              <>
-                <Button variant="outline" size="sm"
-                  onClick={() => user ? setShowFund(true) : setShowLogin(true)}
-                  className="border-amber-400/40 text-amber-400 hover:bg-amber-400/10 text-xs gap-1"
-                  data-testid="btn-fund-dare">
-                  <Wallet className="w-3.5 h-3.5" /> Fund
-                </Button>
-                <Button onClick={() => user ? setShowSubmit(true) : setShowLogin(true)}
-                  className="bg-primary hover:bg-primary/90 text-white font-bold glow-primary-sm"
-                  data-testid="btn-submit-entry">
-                  <Upload className="w-4 h-4 mr-1.5" /> Submit
-                </Button>
-              </>
-            )}
           </div>
+          {isActive && (
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm"
+                onClick={() => user ? setShowFund(true) : setShowLogin(true)}
+                className="border-amber-400/40 text-amber-400 hover:bg-amber-400/10 text-xs gap-1 flex-1"
+                data-testid="btn-fund-dare">
+                <Wallet className="w-3.5 h-3.5" /> Fund Pool
+              </Button>
+              <Button onClick={() => user ? setShowSubmit(true) : setShowLogin(true)}
+                className="bg-primary hover:bg-primary/90 text-white font-bold glow-primary-sm flex-1"
+                data-testid="btn-submit-entry">
+                <Upload className="w-4 h-4 mr-1.5" /> Submit Entry
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Fund dare inline form */}

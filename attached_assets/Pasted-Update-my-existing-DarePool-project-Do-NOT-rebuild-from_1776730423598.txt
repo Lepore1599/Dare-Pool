@@ -1,0 +1,283 @@
+Update my existing DarePool project. Do NOT rebuild from scratch. Keep my current visual style, dark mode, moderation, reports, comments, profiles, and overall branding. Redesign the app navigation to use a TikTok-style bottom tab bar and reorganize the current top navigation accordingly.
+
+GOAL:
+Make the app feel like a real mobile-first social app with 4 bottom tabs:
+1. Home
+2. Reels
+3. Wallet
+4. Profile
+
+IMPORTANT:
+- Reuse my current components, routes, pages, and styling where possible
+- Keep the app mobile-first
+- Keep the current dark premium look
+- Do not remove or break my existing dare pages, comments, moderation, reports, admin tools, profile system, or submission flow
+- Move current top navigation items as needed so the UI feels clean and not crowded
+- The bottom nav should be the primary navigation on mobile
+
+BOTTOM TAB STRUCTURE:
+
+1) HOME TAB
+This should be the far-left bottom tab.
+Purpose:
+- Main feed of dares
+- Current landing/home page content should live here
+
+Requirements:
+- Keep active dares / ended dares / stats / create dare access if already present
+- Keep current dare cards and homepage structure, but optimize spacing for mobile
+- If the create button currently lives in the top bar, move it into either:
+  - a floating action button
+  - or a prominent create button within Home
+- Home should feel like the app’s main discovery page
+
+2) REELS TAB
+This should be the second bottom tab.
+Purpose:
+- Show all submitted videos in one vertical, scrollable short-video feed similar to TikTok/Reels
+- Videos are not grouped visually by the original dare card in the feed, but each video must clearly show which dare it came from and link back to that dare
+
+Requirements:
+- Build a dedicated Reels page/feed
+- Show all valid video submissions in a vertical video stream
+- Each reel card/video should include:
+  - the submitted video
+  - username of the submitter
+  - like/vote info if applicable
+  - the dare title
+  - a clear clickable label/button linking back to the original dare post
+- Dare title/origin must be visible without taking over the screen
+- Allow swipe/scroll to next video naturally on mobile
+- Keep the feed immersive and clean
+- Do not make the user leave the reels feed just to understand what the video is for
+- If comments exist on submissions, keep access to them from the reel
+- Make usernames clickable to the user profile
+- Use existing submission videos; do not duplicate data unnecessarily
+- Keep moderation/report actions available where appropriate
+
+Reels UX:
+- full-height or near-full-height mobile cards
+- overlay UI like modern short-form video apps
+- visible but unobtrusive dare source info
+- tap target to “View Original Dare”
+- subtle dark styling consistent with app brand
+
+3) WALLET TAB
+This should be the third bottom tab.
+Purpose:
+- Central place for deposits, withdrawals, and transaction history
+
+Requirements:
+- Add a dedicated wallet screen as a bottom tab
+- Wallet screen should show:
+  - available balance
+  - pending balance
+  - withdrawable balance
+  - add funds button
+  - withdraw button
+  - transaction history
+  - deposit history
+  - withdrawal history
+- Wallet should feel clean and premium, not like an admin panel
+
+REAL MONEY ARCHITECTURE:
+Implement the wallet as a processor-backed balance system, NOT a homemade raw card/bank wallet.
+
+Preferred implementation:
+- Use Stripe hosted Checkout for deposits
+- Use Stripe Connect onboarding for payout setup
+- Use connected account payout flow for withdrawals
+- Use webhook confirmation for successful deposits
+- Never store raw card or bank details in my database
+- Keep all payment keys in environment variables
+
+Wallet requirements:
+- Add Funds:
+  - user enters amount
+  - create hosted checkout session
+  - redirect to checkout
+  - update balance only after webhook confirms success
+- Withdraw:
+  - if no payout account exists, show “Set up withdrawals”
+  - send user through payout onboarding
+  - after onboarding, allow withdrawal requests from withdrawable balance only
+- Show clear states:
+  - pending
+  - completed
+  - failed
+- Keep all money actions server-side validated
+- Prevent over-withdrawals
+- Prevent negative balances
+- Keep transaction history persistent
+
+IMPORTANT:
+Build this as a wallet-like product UX backed by processor flows, not a fake frontend-only wallet.
+
+4) PROFILE TAB
+This should be the far-right bottom tab.
+Purpose:
+- User’s own profile page and account settings
+
+Requirements:
+- Bottom tab should always take the current logged-in user to their own profile
+- Keep current profile system
+- Include:
+  - profile header
+  - avatar
+  - bio
+  - badges
+  - stats
+  - entries
+  - wins
+  - comments
+  - profile editing
+- Keep username change cooldown, avatar upload, and profile picture support working
+- Keep the design polished and mobile-friendly
+
+TOP NAV REORGANIZATION:
+The top navigation is currently overcrowded.
+Clean it up.
+
+Requirements:
+- Remove any navigation items from the top that are now covered by bottom tabs
+- Keep the top bar minimal
+- Suggested top bar contents:
+  - logo/brand on left
+  - optional context action on right depending on page
+- Admin should NOT live as a cluttering permanent top nav button unless the logged-in user is an admin
+- If admin user is logged in:
+  - either place admin access in profile/settings
+  - or a small conditional top-right icon/button only for admins
+- Move sign out / account actions into profile/settings instead of top nav if needed
+
+CREATE DARE ACCESS:
+Since the old top layout may change, preserve easy access to creating a dare.
+
+Requirements:
+- Add a mobile-friendly create dare entry point
+- Best option:
+  - floating action button
+  - or prominent create CTA on Home
+- Make sure it does not conflict with bottom navigation
+
+ROUTING / NAVIGATION:
+Update routing cleanly.
+
+Requirements:
+- Add or map routes for:
+  - /home
+  - /reels
+  - /wallet
+  - /profile
+- Bottom tab bar should persist across the main app screens on mobile
+- Active tab should be visually highlighted
+- Navigation should feel app-like, not like a normal website header
+
+REELS DATA / SOURCE LINKING:
+Requirements:
+- Pull from existing submission video data
+- Each reel must preserve its relationship to:
+  - original dare
+  - submitter
+- On each reel:
+  - show dare title
+  - clickable “View Dare” link/button
+  - clickable username
+- Do not disconnect reels from the dare ecosystem
+
+WALLET DATABASE / BACKEND SUPPORT:
+If not already implemented, add or extend persistent models/tables for:
+- user_wallets
+- wallet_transactions
+- payout_accounts
+- withdrawal_requests
+
+Suggested wallet fields:
+USER_WALLETS:
+- id
+- userId
+- availableBalance
+- pendingBalance
+- withdrawableBalance
+- lifetimeDeposited
+- lifetimeWithdrawn
+- lifetimeWon
+- createdAt
+- updatedAt
+
+WALLET_TRANSACTIONS:
+- id
+- userId
+- type
+- status
+- amount
+- currency
+- processor
+- processorReferenceId
+- relatedDareId nullable
+- relatedEntryId nullable
+- description
+- createdAt
+- updatedAt
+
+PAYOUT_ACCOUNTS:
+- id
+- userId
+- provider
+- providerAccountId
+- onboardingComplete
+- payoutsEnabled
+- chargesEnabled
+- createdAt
+- updatedAt
+
+WITHDRAWAL_REQUESTS:
+- id
+- userId
+- amount
+- status
+- providerPayoutId
+- createdAt
+- updatedAt
+
+DESIGN / UX:
+Keep everything:
+- dark mode
+- premium
+- mobile-first
+- smooth
+- modern
+- consistent with the current purple/black DarePool aesthetic
+
+Bottom tab bar requirements:
+- fixed at bottom on mobile
+- icons + labels
+- strong active state
+- safe-area friendly for iPhone
+- polished spacing and glow/shadow consistent with app style
+
+Reels screen should feel immersive.
+Wallet should feel trustworthy and clean.
+Profile should feel competitive and social.
+Home should remain the main dare discovery hub.
+
+SECURITY / VALIDATION:
+- All wallet actions must be server-side validated
+- Do not trust client-side balance math
+- Protect wallet and payout routes behind auth
+- Use webhook signature verification
+- Keep admin-only pages protected
+- Keep moderation/reporting intact on reels and other pages
+
+FINAL REQUIREMENTS:
+When finished:
+- make sure the app still runs in Replit
+- explain what files were changed
+- explain how the new bottom nav is structured
+- explain how the top bar was simplified
+- explain how the reels feed is built from submission videos
+- explain how the wallet deposit flow works
+- explain how the wallet withdrawal flow works
+- explain what environment variables are needed
+- do not rebuild the app from scratch
+- preserve current functionality while upgrading the layout and navigation

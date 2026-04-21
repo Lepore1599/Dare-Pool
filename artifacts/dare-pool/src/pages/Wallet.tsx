@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useLocation } from "wouter";
-import { Wallet as WalletIcon, Plus, ArrowUpRight, ArrowDownLeft, Clock, CheckCircle, XCircle, ExternalLink } from "lucide-react";
+import { Wallet as WalletIcon, Plus, ArrowUpRight, ArrowDownLeft, Clock, CheckCircle, XCircle, ExternalLink, WifiOff, RefreshCw } from "lucide-react";
 import { apiGetWallet, apiDepositFunds, apiWithdrawFunds, apiStartOnboarding, type ApiWallet, type ApiWalletTransaction } from "@/lib/api";
 import { useUser } from "@/context/UserContext";
 import { toast } from "sonner";
@@ -32,6 +32,7 @@ export function Wallet({ onRequestLogin }: { onRequestLogin: () => void }) {
   const [hasPayoutAccount, setHasPayoutAccount] = useState(false);
   const [payoutsEnabled, setPayoutsEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [depositAmount, setDepositAmount] = useState("");
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [depositing, setDepositing] = useState(false);
@@ -41,15 +42,18 @@ export function Wallet({ onRequestLogin }: { onRequestLogin: () => void }) {
   const [showWithdraw, setShowWithdraw] = useState(false);
 
   const load = useCallback(async () => {
-    if (!user) return;
+    if (!user) { setLoading(false); return; }
+    setLoadError(false);
+    setLoading(true);
     try {
       const data = await apiGetWallet();
       setWallet(data.wallet);
       setTransactions(data.transactions);
       setHasPayoutAccount(!!data.payoutAccount);
       setPayoutsEnabled(!!data.payoutAccount?.payoutsEnabled);
-    } catch {
-      toast.error("Failed to load wallet.");
+    } catch (err) {
+      console.error("[Wallet] Failed to load:", err);
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -136,6 +140,28 @@ export function Wallet({ onRequestLogin }: { onRequestLogin: () => void }) {
     return (
       <div className="flex justify-center items-center min-h-[40vh]">
         <div className="w-7 h-7 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-5 px-6 text-center">
+        <div className="w-16 h-16 rounded-2xl bg-destructive/10 flex items-center justify-center">
+          <WifiOff className="w-8 h-8 text-destructive/70" />
+        </div>
+        <div>
+          <h2 className="font-bold text-foreground text-lg mb-1">Unable to Load Wallet</h2>
+          <p className="text-muted-foreground text-sm max-w-xs">
+            Could not reach the server. Check your connection and try again.
+          </p>
+        </div>
+        <button
+          onClick={load}
+          className="flex items-center gap-2 px-5 py-2.5 bg-primary hover:bg-primary/90 text-white rounded-xl font-semibold text-sm transition-colors"
+        >
+          <RefreshCw className="w-4 h-4" /> Retry
+        </button>
       </div>
     );
   }

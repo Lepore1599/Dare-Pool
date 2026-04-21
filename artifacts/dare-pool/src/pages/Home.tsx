@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { Link, useLocation } from "wouter";
-import { Flame, Trophy, Plus, Users, ChevronRight, Zap, TrendingUp, Clock, Rocket } from "lucide-react";
+import { Flame, Trophy, Plus, Users, ChevronRight, Zap, TrendingUp, Clock, Rocket, WifiOff } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { apiGetDares, type ApiDare } from "@/lib/api";
 import { CountdownBadge } from "@/components/CountdownBadge";
@@ -73,13 +73,17 @@ export function Home({ onLoginClick }: HomeProps) {
   const [dares, setDares] = useState<ApiDare[]>([]);
   const [tab, setTab] = useState<FeedTab>("hot");
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
   const load = useCallback(async () => {
+    setLoadError(false);
+    setLoading(true);
     try {
       const { dares: d } = await apiGetDares();
       setDares(d);
-    } catch {
-      // silent
+    } catch (err) {
+      console.error("[Home] Failed to load dares:", err);
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -136,6 +140,38 @@ export function Home({ onLoginClick }: HomeProps) {
     { id: "trending", label: "Trending", icon: TrendingUp  },
     { id: "recent",   label: "Recent",   icon: Clock       },
   ];
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
+        <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+        <p className="text-muted-foreground text-sm">Loading dares…</p>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-5 px-6 text-center">
+        <div className="w-16 h-16 rounded-2xl bg-destructive/10 flex items-center justify-center">
+          <WifiOff className="w-8 h-8 text-destructive/70" />
+        </div>
+        <div>
+          <h2 className="font-bold text-foreground text-lg mb-1">Unable to Load Dares</h2>
+          <p className="text-muted-foreground text-sm max-w-xs">
+            Could not reach the server. Check your connection and try again.
+          </p>
+        </div>
+        <Button
+          onClick={load}
+          className="bg-primary hover:bg-primary/90 text-white font-semibold"
+          data-testid="btn-retry-home"
+        >
+          Retry
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">

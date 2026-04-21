@@ -1,0 +1,75 @@
+Update my existing DarePool project. Do NOT rebuild from scratch.
+
+GOAL:
+Fix the iOS Capacitor build so the app does not show blank screens when opened in Xcode/simulator. Right now the app shell loads, bottom nav appears, Profile shows login, but Home/Reels/Wallet are blank or non-interactive.
+
+PROBLEM TO SOLVE:
+The app likely depends on Replit-specific environment variables, dev-only assumptions, or backend/API routing that do not exist inside the iOS Capacitor build. I need the app to render correctly in a production Capacitor webview.
+
+REQUIREMENTS:
+
+1. REMOVE REPLIT-ONLY FRONTEND DEPENDENCIES
+- Audit the frontend for any hard dependency on Replit-only environment variables such as PORT, BASE_PATH, REPL_ID, or other Replit dev assumptions
+- Make sure production Capacitor builds do not require Replit-only frontend env vars to render
+- Ensure the app can boot cleanly inside Capacitor even when Replit dev variables are absent
+
+2. FIX API URL / BACKEND HANDLING FOR CAPACITOR
+- Audit how the frontend determines its API base URL
+- In Capacitor production builds, do NOT rely on localhost assumptions that only work in Replit
+- Add a clear environment-based API URL strategy:
+  - web/Replit dev can use existing dev proxy behavior
+  - Capacitor production build should use an explicit API base URL or safe fallback
+- Make this easy to configure with a VITE_API_URL or equivalent
+- Prevent blank pages if the API URL is missing or wrong
+
+3. FAIL GRACEFULLY
+- If API calls fail, do NOT leave the screen blank
+- Show useful fallback UI / loading / error states on:
+  - Home
+  - Reels
+  - Wallet
+  - Profile
+- The app should never show an empty dead screen just because data failed to load
+
+4. DEBUG PRODUCTION BOOTSTRAP
+- Add lightweight console logging for production/debugging around:
+  - app bootstrap
+  - route loading
+  - API base URL selection
+  - major fetch failures
+- Keep logs useful but not excessive
+
+5. FIX NON-INTERACTIVE BLANK PAGES
+- Audit overlays, pointer-events, z-index, and safe-area wrappers
+- Make sure a transparent overlay is not blocking interaction
+- Make sure main page containers are actually rendering and scrollable
+- Ensure tab navigation changes visible content correctly
+
+6. CAPACITOR-SAFE ROUTING
+- Audit SPA routing for Capacitor
+- Prevent routes from resolving to blank states in native webview
+- Keep internal routing app-like and stable
+
+7. HOME / REELS / WALLET DATA FALLBACKS
+- If those screens rely on authenticated data or API data, show a proper empty/error state instead of rendering nothing
+- Example:
+  - “Unable to load dares”
+  - “Unable to load wallet”
+  - retry button
+- Make these screens still visually render even if backend calls fail
+
+8. PROFILE / LOGIN
+- Keep the profile/login flow working
+- If login is the only working screen, identify why the other screens fail and patch it without breaking auth
+
+9. CAPACITOR BUILD CONFIG
+- Make sure the Capacitor build uses the correct production Vite config and outputs a fully usable app
+- Keep build output compatible with current capacitor.config.ts
+- Do not rely on Replit-only proxy settings in Capacitor builds
+
+10. FINAL REQUIREMENTS
+- Explain the root cause of the blank screen issue
+- Explain what was changed
+- Make the app render safely in iOS simulator even if API/backend is temporarily unavailable
+- Do not rebuild the app from scratch
+- Preserve existing features while fixing Capacitor production behavior

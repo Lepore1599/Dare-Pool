@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import { Heart, MessageCircle, Flag, ExternalLink } from "lucide-react";
+import { useEffect, useRef, useState, useCallback } from "react";
+import { Heart, MessageCircle, Flag, ExternalLink, WifiOff, RefreshCw } from "lucide-react";
 import { Link } from "wouter";
 import { apiGetReels, type ApiReel } from "@/lib/api";
 import { UserLink } from "@/components/UserLink";
@@ -12,18 +12,27 @@ export function Reels({ onRequestLogin }: { onRequestLogin: () => void }) {
   const { user } = useUser();
   const [reels, setReels] = useState<ApiReel[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const [commentsEntryId, setCommentsEntryId] = useState<number | null>(null);
   const [reportEntryId, setReportEntryId] = useState<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRefs = useRef<Record<number, HTMLVideoElement | null>>({});
 
-  useEffect(() => {
+  const load = useCallback(() => {
+    setLoadError(false);
+    setLoading(true);
     apiGetReels()
       .then((r) => setReels(r.reels))
-      .catch(() => setReels([]))
+      .catch((err) => {
+        console.error("[Reels] Failed to load:", err);
+        setLoadError(true);
+        setReels([]);
+      })
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => { load(); }, [load]);
 
   // Auto-play / pause based on active index
   useEffect(() => {
@@ -60,6 +69,28 @@ export function Reels({ onRequestLogin }: { onRequestLogin: () => void }) {
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
         <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
         <p className="text-muted-foreground text-sm">Loading reels…</p>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-5 px-6 text-center">
+        <div className="w-16 h-16 rounded-2xl bg-destructive/10 flex items-center justify-center">
+          <WifiOff className="w-8 h-8 text-destructive/70" />
+        </div>
+        <div>
+          <h2 className="font-bold text-foreground text-lg mb-1">Unable to Load Reels</h2>
+          <p className="text-muted-foreground text-sm max-w-xs">
+            Could not reach the server. Check your connection and try again.
+          </p>
+        </div>
+        <button
+          onClick={load}
+          className="flex items-center gap-2 px-5 py-2.5 bg-primary hover:bg-primary/90 text-white rounded-xl font-semibold text-sm transition-colors"
+        >
+          <RefreshCw className="w-4 h-4" /> Retry
+        </button>
       </div>
     );
   }

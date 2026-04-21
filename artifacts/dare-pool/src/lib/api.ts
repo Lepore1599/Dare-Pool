@@ -1,10 +1,26 @@
 /**
  * DarePool API client
  * All server calls go through this file. Keep functions typed and thin.
- * The Vite dev server proxies /api → api-server (port 8080).
+ *
+ * ─── API URL strategy ────────────────────────────────────────────────────────
+ * Web / Replit dev:
+ *   VITE_API_URL is not set → BASE = "/api"
+ *   Vite dev server proxies /api → api-server (port 8080) automatically.
+ *
+ * Capacitor / iOS production build:
+ *   Set VITE_API_URL=https://your-api.replit.app when running build:capacitor
+ *   BASE becomes "https://your-api.replit.app/api"
+ *   Make sure your API server has CORS set to allow capacitor://localhost and app://localhost
+ * ─────────────────────────────────────────────────────────────────────────────
  */
 
-const BASE = "/api";
+const _apiOrigin = (import.meta.env.VITE_API_URL as string | undefined) ?? "";
+const BASE = `${_apiOrigin}/api`;
+
+// Bootstrap log: visible in Safari Web Inspector when running in iOS Simulator
+console.info(
+  `[DarePool] API base: ${BASE || "/api (relative — dev proxy)"}  |  env: ${import.meta.env.MODE}  |  base-url: ${import.meta.env.BASE_URL}`
+);
 
 function getToken(): string | null {
   return localStorage.getItem("darepool_token");
@@ -24,18 +40,27 @@ async function request<T>(
   const headers: Record<string, string> = { ...authHeaders() };
   if (body && !isFormData) headers["Content-Type"] = "application/json";
 
-  const res = await fetch(`${BASE}${path}`, {
-    method,
-    headers,
-    body: isFormData
-      ? (body as FormData)
-      : body !== undefined
-      ? JSON.stringify(body)
-      : undefined,
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${BASE}${path}`, {
+      method,
+      headers,
+      body: isFormData
+        ? (body as FormData)
+        : body !== undefined
+        ? JSON.stringify(body)
+        : undefined,
+    });
+  } catch (networkErr) {
+    console.error(`[DarePool] Network error → ${method} ${BASE}${path}`, networkErr);
+    throw new Error("Cannot reach the server. Check your connection.");
+  }
 
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error((data as { error?: string }).error ?? "Request failed.");
+  if (!res.ok) {
+    console.warn(`[DarePool] ${res.status} ← ${method} ${BASE}${path}`, data);
+    throw new Error((data as { error?: string }).error ?? "Request failed.");
+  }
   return data as T;
 }
 

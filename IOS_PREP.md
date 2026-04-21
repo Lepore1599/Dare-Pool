@@ -103,6 +103,10 @@ npm install -g pnpm
 ```
 
 ### Step 2: Clone & Build
+
+**IMPORTANT**: Before building for Capacitor you MUST set `VITE_API_URL` to your
+deployed API server URL, otherwise the app will show "Unable to Load" screens.
+
 ```bash
 git clone <your-repo>
 cd <repo-root>/artifacts/dare-pool
@@ -110,11 +114,26 @@ cd <repo-root>/artifacts/dare-pool
 # Install dependencies
 pnpm install
 
+# Set your deployed API URL (the Replit deployment URL for the api-server artifact)
+export VITE_API_URL=https://your-api-server.replit.app
+
 # Build web app + add iOS platform + sync assets:
 pnpm run build:capacitor
 npx cap add ios
 npx cap sync ios
 ```
+
+You can also create a `.env.capacitor` file (never commit this):
+```
+VITE_API_URL=https://your-api-server.replit.app
+```
+
+Your API server URL is the deployment URL of the `api-server` artifact.
+Deploy it first from Replit, then use that URL here.
+
+The API server already allows cross-origin requests from any origin
+(`cors({ origin: true })`), so `capacitor://localhost` and `app://localhost`
+are already permitted without any additional CORS configuration.
 
 ### Step 3: Open in Xcode
 ```bash
